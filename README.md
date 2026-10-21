@@ -1,6 +1,6 @@
 # Luuna Missions
 
-Git-native tickets and structured work plans. This is Luuna's maintained MIT-licensed fork of [Seeds](https://github.com/jayminwest/seeds), imported from upstream version **0.6.0**. The Luuna package identity is **@luuna/missions-cli**. It is maintained in the independent public repository [brodynelly/missions](https://github.com/brodynelly/missions). The npm package remains private and unpublished.
+Git-native tickets and structured work plans. This is Luuna's maintained MIT-licensed fork of [Seeds](https://github.com/jayminwest/seeds), imported from upstream version **0.6.0**. The Luuna package identity is **@luuna/missions-cli**. It is maintained in the independent public repository [brodynelly/luuna-missions](https://github.com/brodynelly/luuna-missions). The npm package remains private and unpublished.
 
 Run from this directory with Bun 1.4.3:
 
