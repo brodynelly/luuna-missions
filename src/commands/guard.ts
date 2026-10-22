@@ -10,6 +10,7 @@
 
 import { basename, dirname, resolve } from "node:path";
 import type { Command } from "commander";
+import { readStdin } from "../stdin.ts";
 
 const FILE_KEYS: Record<string, string> = {
 	Write: "file_path",
@@ -69,7 +70,7 @@ export function register(program: Command): void {
 		.command("guard")
 		.description("PreToolUse hook: deny hand edits to .seeds/*.jsonl (reads hook JSON on stdin)")
 		.action(async () => {
-			const raw = process.stdin.isTTY ? "" : await Bun.stdin.text();
+			const raw = process.stdin.isTTY ? "" : await readStdin();
 			process.stdout.write(guardOutput(raw, process.cwd()));
 		});
 }

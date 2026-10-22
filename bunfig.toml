@@ -7,3 +7,9 @@
 # default recursive discovery covers both src/ and extensions/ — scoping
 # to a single root would hide extensions/ tests once that directory is
 # populated.
+#
+# The preload puts Git for Windows' POSIX tools on PATH for the Windows run
+# (a no-op elsewhere); see src/test-preload.ts.
+
+[test]
+preload = ["./src/test-preload.ts"]

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `sd guard` and `sd plan submit --plan -` read piped stdin on Windows. `Bun.stdin.text()` let the process exit 0 before the read finished, so `guard` allowed every edit and `plan submit` did nothing.
+
+### Changed
+- The test suite passes on Windows, and CI runs `bun run verify` on `windows-latest`. Fake `ml` executables use a `.cmd` launcher there, and a test preload puts Git for Windows' POSIX tools on PATH.
+
 ## [0.6.0] - 2026-09-29
 
 ### Added
