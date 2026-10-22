@@ -2,7 +2,7 @@ import { existsSync, readFileSync, statSync, unlinkSync, writeFileSync } from "n
 import { join } from "node:path";
 import chalk from "chalk";
 import type { Command } from "commander";
-import { findSeedsDir, projectRootFromSeedsDir, readConfig } from "../config.ts";
+import { findMissionsDir, projectRootFromMissionsDir, readConfig } from "../config.ts";
 import { brand, muted, outputJson } from "../output.ts";
 import { readIssues } from "../store.ts";
 import type { Issue, Template } from "../types.ts";
@@ -47,12 +47,12 @@ function readRawLines(filePath: string): RawLine[] {
 	return lines;
 }
 
-function checkConfig(seedsDir: string, config: { project: string } | null): DoctorCheck {
-	if (!existsSync(seedsDir)) {
+function checkConfig(missionsDir: string, config: { project: string } | null): DoctorCheck {
+	if (!existsSync(missionsDir)) {
 		return {
 			name: "config",
 			status: "fail",
-			message: ".seeds/ directory not found",
+			message: ".luuna/missions/ directory not found",
 			details: [],
 			fixable: false,
 		};
@@ -84,10 +84,10 @@ function checkConfig(seedsDir: string, config: { project: string } | null): Doct
 	};
 }
 
-function checkJsonlIntegrity(seedsDir: string): DoctorCheck {
+function checkJsonlIntegrity(missionsDir: string): DoctorCheck {
 	const details: string[] = [];
 	for (const file of [ISSUES_FILE, TEMPLATES_FILE]) {
-		const lines = readRawLines(join(seedsDir, file));
+		const lines = readRawLines(join(missionsDir, file));
 		for (const line of lines) {
 			if (line.error) {
 				details.push(`${file} line ${String(line.lineNumber)}: ${line.error}`);
@@ -112,9 +112,9 @@ function checkJsonlIntegrity(seedsDir: string): DoctorCheck {
 	};
 }
 
-function checkSchemaValidation(seedsDir: string): DoctorCheck {
+function checkSchemaValidation(missionsDir: string): DoctorCheck {
 	const details: string[] = [];
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	for (const line of lines) {
 		if (!line.parsed) continue;
 		const issue = line.parsed as Record<string, unknown>;
@@ -165,10 +165,10 @@ function checkSchemaValidation(seedsDir: string): DoctorCheck {
 	};
 }
 
-function checkDuplicateIds(seedsDir: string): DoctorCheck {
+function checkDuplicateIds(missionsDir: string): DoctorCheck {
 	const details: string[] = [];
 	for (const file of [ISSUES_FILE, TEMPLATES_FILE]) {
-		const lines = readRawLines(join(seedsDir, file));
+		const lines = readRawLines(join(missionsDir, file));
 		const counts = new Map<string, number>();
 		for (const line of lines) {
 			if (!line.parsed) continue;
@@ -321,9 +321,9 @@ function checkCircularDependencies(issues: Issue[]): DoctorCheck {
 	};
 }
 
-function checkLabelSchema(seedsDir: string): DoctorCheck {
+function checkLabelSchema(missionsDir: string): DoctorCheck {
 	const details: string[] = [];
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	for (const line of lines) {
 		if (!line.parsed) continue;
 		const issue = line.parsed as Record<string, unknown>;
@@ -360,9 +360,9 @@ function checkLabelSchema(seedsDir: string): DoctorCheck {
 	};
 }
 
-function checkExtensionsSchema(seedsDir: string): DoctorCheck {
+function checkExtensionsSchema(missionsDir: string): DoctorCheck {
 	const details: string[] = [];
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	for (const line of lines) {
 		if (!line.parsed) continue;
 		const issue = line.parsed as Record<string, unknown>;
@@ -391,10 +391,10 @@ function checkExtensionsSchema(seedsDir: string): DoctorCheck {
 	};
 }
 
-function checkClosedFieldsConsistency(seedsDir: string): DoctorCheck {
+function checkClosedFieldsConsistency(missionsDir: string): DoctorCheck {
 	const failures: string[] = [];
 	const warnings: string[] = [];
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	for (const line of lines) {
 		if (!line.parsed) continue;
 		const issue = line.parsed as Record<string, unknown>;
@@ -439,10 +439,10 @@ function checkClosedFieldsConsistency(seedsDir: string): DoctorCheck {
 	};
 }
 
-function checkStaleLocks(seedsDir: string): DoctorCheck {
+function checkStaleLocks(missionsDir: string): DoctorCheck {
 	const details: string[] = [];
 	for (const file of [ISSUES_FILE, TEMPLATES_FILE]) {
-		const lockPath = join(seedsDir, `${file}.lock`);
+		const lockPath = join(missionsDir, `${file}.lock`);
 		if (existsSync(lockPath)) {
 			try {
 				const st = statSync(lockPath);
@@ -477,8 +477,8 @@ function checkStaleLocks(seedsDir: string): DoctorCheck {
 	};
 }
 
-function checkGitattributes(seedsDir: string): DoctorCheck {
-	const projectRoot = projectRootFromSeedsDir(seedsDir);
+function checkGitattributes(missionsDir: string): DoctorCheck {
+	const projectRoot = projectRootFromMissionsDir(missionsDir);
 	const gitattrsPath = join(projectRoot, ".gitattributes");
 	const details: string[] = [];
 
@@ -511,7 +511,7 @@ function checkGitattributes(seedsDir: string): DoctorCheck {
 	};
 }
 
-function applyFixes(seedsDir: string, checks: DoctorCheck[]): string[] {
+function applyFixes(missionsDir: string, checks: DoctorCheck[]): string[] {
 	const fixed: string[] = [];
 
 	for (const check of checks) {
@@ -520,7 +520,7 @@ function applyFixes(seedsDir: string, checks: DoctorCheck[]): string[] {
 		switch (check.name) {
 			case "jsonl-integrity": {
 				for (const file of [ISSUES_FILE, TEMPLATES_FILE]) {
-					const filePath = join(seedsDir, file);
+					const filePath = join(missionsDir, file);
 					if (!existsSync(filePath)) continue;
 					const lines = readRawLines(filePath);
 					const validLines = lines.filter((l) => !l.error);
@@ -537,20 +537,20 @@ function applyFixes(seedsDir: string, checks: DoctorCheck[]): string[] {
 			}
 			case "duplicate-ids": {
 				// Read, dedup (last wins), and rewrite via store functions
-				fixDuplicates(seedsDir, fixed);
+				fixDuplicates(missionsDir, fixed);
 				break;
 			}
 			case "referential-integrity": {
-				fixDanglingRefs(seedsDir, fixed);
+				fixDanglingRefs(missionsDir, fixed);
 				break;
 			}
 			case "bidirectional-consistency": {
-				fixBidirectional(seedsDir, fixed);
+				fixBidirectional(missionsDir, fixed);
 				break;
 			}
 			case "stale-locks": {
 				for (const file of [ISSUES_FILE, TEMPLATES_FILE]) {
-					const lockPath = join(seedsDir, `${file}.lock`);
+					const lockPath = join(missionsDir, `${file}.lock`);
 					if (existsSync(lockPath)) {
 						try {
 							const st = statSync(lockPath);
@@ -566,19 +566,19 @@ function applyFixes(seedsDir: string, checks: DoctorCheck[]): string[] {
 				break;
 			}
 			case "label-schema": {
-				fixLabelSchema(seedsDir, fixed);
+				fixLabelSchema(missionsDir, fixed);
 				break;
 			}
 			case "extensions-schema": {
-				fixExtensionsSchema(seedsDir, fixed);
+				fixExtensionsSchema(missionsDir, fixed);
 				break;
 			}
 			case "closed-fields-consistency": {
-				fixClosedFieldsConsistency(seedsDir, fixed);
+				fixClosedFieldsConsistency(missionsDir, fixed);
 				break;
 			}
 			case "gitattributes": {
-				fixGitattributes(seedsDir, fixed);
+				fixGitattributes(missionsDir, fixed);
 				break;
 			}
 		}
@@ -586,8 +586,8 @@ function applyFixes(seedsDir: string, checks: DoctorCheck[]): string[] {
 	return fixed;
 }
 
-function fixLabelSchema(seedsDir: string, fixed: string[]): void {
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+function fixLabelSchema(missionsDir: string, fixed: string[]): void {
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	const idMap = new Map<string, Issue>();
 	for (const line of lines) {
 		if (!line.parsed) continue;
@@ -616,13 +616,13 @@ function fixLabelSchema(seedsDir: string, fixed: string[]): void {
 	}
 	if (changed) {
 		const content = `${issues.map((i) => JSON.stringify(i)).join("\n")}\n`;
-		writeFileSync(join(seedsDir, ISSUES_FILE), content);
+		writeFileSync(join(missionsDir, ISSUES_FILE), content);
 		fixed.push("Cleaned up invalid label entries");
 	}
 }
 
-function fixExtensionsSchema(seedsDir: string, fixed: string[]): void {
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+function fixExtensionsSchema(missionsDir: string, fixed: string[]): void {
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	const idMap = new Map<string, Issue>();
 	for (const line of lines) {
 		if (!line.parsed) continue;
@@ -643,13 +643,13 @@ function fixExtensionsSchema(seedsDir: string, fixed: string[]): void {
 	}
 	if (changed) {
 		const content = `${issues.map((i) => JSON.stringify(i)).join("\n")}\n`;
-		writeFileSync(join(seedsDir, ISSUES_FILE), content);
+		writeFileSync(join(missionsDir, ISSUES_FILE), content);
 		fixed.push("Dropped malformed extensions fields");
 	}
 }
 
-function fixClosedFieldsConsistency(seedsDir: string, fixed: string[]): void {
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+function fixClosedFieldsConsistency(missionsDir: string, fixed: string[]): void {
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	const idMap = new Map<string, Issue>();
 	for (const line of lines) {
 		if (!line.parsed) continue;
@@ -674,14 +674,14 @@ function fixClosedFieldsConsistency(seedsDir: string, fixed: string[]): void {
 	}
 	if (changed) {
 		const content = `${issues.map((i) => JSON.stringify(i)).join("\n")}\n`;
-		writeFileSync(join(seedsDir, ISSUES_FILE), content);
+		writeFileSync(join(missionsDir, ISSUES_FILE), content);
 		fixed.push("Repaired status/close-metadata mismatches");
 	}
 }
 
-function fixDuplicates(seedsDir: string, fixed: string[]): void {
+function fixDuplicates(missionsDir: string, fixed: string[]): void {
 	// Issues
-	const issueLines = readRawLines(join(seedsDir, ISSUES_FILE));
+	const issueLines = readRawLines(join(missionsDir, ISSUES_FILE));
 	const issueMap = new Map<string, Issue>();
 	for (const line of issueLines) {
 		if (!line.parsed) continue;
@@ -694,12 +694,12 @@ function fixDuplicates(seedsDir: string, fixed: string[]): void {
 		const content = `${Array.from(issueMap.values())
 			.map((i) => JSON.stringify(i))
 			.join("\n")}\n`;
-		writeFileSync(join(seedsDir, ISSUES_FILE), content);
+		writeFileSync(join(missionsDir, ISSUES_FILE), content);
 		fixed.push("Deduplicated issues.jsonl");
 	}
 
 	// Templates
-	const tplLines = readRawLines(join(seedsDir, TEMPLATES_FILE));
+	const tplLines = readRawLines(join(missionsDir, TEMPLATES_FILE));
 	const tplMap = new Map<string, Template>();
 	for (const line of tplLines) {
 		if (!line.parsed) continue;
@@ -712,13 +712,13 @@ function fixDuplicates(seedsDir: string, fixed: string[]): void {
 		const content = `${Array.from(tplMap.values())
 			.map((t) => JSON.stringify(t))
 			.join("\n")}\n`;
-		writeFileSync(join(seedsDir, TEMPLATES_FILE), content);
+		writeFileSync(join(missionsDir, TEMPLATES_FILE), content);
 		fixed.push("Deduplicated templates.jsonl");
 	}
 }
 
-function fixDanglingRefs(seedsDir: string, fixed: string[]): void {
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+function fixDanglingRefs(missionsDir: string, fixed: string[]): void {
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	const issues: Issue[] = [];
 	const idMap = new Map<string, Issue>();
 	for (const line of lines) {
@@ -753,13 +753,13 @@ function fixDanglingRefs(seedsDir: string, fixed: string[]): void {
 	}
 	if (changed) {
 		const content = `${issues.map((i) => JSON.stringify(i)).join("\n")}\n`;
-		writeFileSync(join(seedsDir, ISSUES_FILE), content);
+		writeFileSync(join(missionsDir, ISSUES_FILE), content);
 		fixed.push("Removed dangling dependency references");
 	}
 }
 
-function fixBidirectional(seedsDir: string, fixed: string[]): void {
-	const lines = readRawLines(join(seedsDir, ISSUES_FILE));
+function fixBidirectional(missionsDir: string, fixed: string[]): void {
+	const lines = readRawLines(join(missionsDir, ISSUES_FILE));
 	const idMap = new Map<string, Issue>();
 	for (const line of lines) {
 		if (!line.parsed) continue;
@@ -790,13 +790,13 @@ function fixBidirectional(seedsDir: string, fixed: string[]): void {
 
 	if (changed) {
 		const content = `${issues.map((i) => JSON.stringify(i)).join("\n")}\n`;
-		writeFileSync(join(seedsDir, ISSUES_FILE), content);
+		writeFileSync(join(missionsDir, ISSUES_FILE), content);
 		fixed.push("Added missing bidirectional dependency links");
 	}
 }
 
-function fixGitattributes(seedsDir: string, fixed: string[]): void {
-	const projectRoot = projectRootFromSeedsDir(seedsDir);
+function fixGitattributes(missionsDir: string, fixed: string[]): void {
+	const projectRoot = projectRootFromMissionsDir(missionsDir);
 	const gitattrsPath = join(projectRoot, ".gitattributes");
 
 	if (!existsSync(gitattrsPath)) {
@@ -832,12 +832,12 @@ function printCheck(check: DoctorCheck, verbose: boolean): void {
 	}
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const fixMode = args.includes("--fix");
 	const verbose = args.includes("--verbose");
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 
 	// Load config
 	let config: { project: string } | null = null;
@@ -914,7 +914,7 @@ async function reportResults(
 	jsonMode: boolean,
 	verbose: boolean,
 	_fixMode: boolean,
-	_seedsDir: string,
+	_missionsDir: string,
 	fixedItems?: string[],
 ): Promise<void> {
 	const summary = {
@@ -938,7 +938,7 @@ async function reportResults(
 			...(fixedItems && fixedItems.length > 0 ? { fixed: fixedItems } : {}),
 		});
 	} else {
-		console.log(`\n${chalk.bold("Seeds Doctor")}\n`);
+		console.log(`\n${chalk.bold("Missions Doctor")}\n`);
 		for (const check of checks) {
 			printCheck(check, verbose);
 		}

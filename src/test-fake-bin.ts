@@ -1,4 +1,4 @@
-// Cross-platform stand-ins for external CLIs (e.g. a fake `ml`) in tests.
+// Cross-platform stand-ins for external CLIs (e.g. a fake `luuna-atlas`) in tests.
 //
 // POSIX runs the stand-in directly through a `#!/usr/bin/env bun` shebang.
 // Windows cannot exec shebang scripts, so the script is written as

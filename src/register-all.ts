@@ -1,6 +1,6 @@
 // Shared helper that registers every CLI subcommand on a given commander
 // Program. Extracted from src/index.ts so tests (and any in-process tools
-// that need a fully-populated command tree, e.g. `sd completions`) can
+// that need a fully-populated command tree, e.g. `luuna-missions completions`) can
 // construct a Program without spawning a subprocess.
 
 import type { Command } from "commander";

@@ -57,52 +57,52 @@ describe("createLog redaction", () => {
 
 describe("createLog level resolution", () => {
 	const saved = {
-		level: process.env.SEEDS_LOG_LEVEL,
-		debug: process.env.SEEDS_DEBUG,
+		level: process.env.LUUNA_MISSIONS_LOG_LEVEL,
+		debug: process.env.LUUNA_MISSIONS_DEBUG,
 	};
 
 	beforeEach(() => {
-		delete process.env.SEEDS_LOG_LEVEL;
-		delete process.env.SEEDS_DEBUG;
+		delete process.env.LUUNA_MISSIONS_LOG_LEVEL;
+		delete process.env.LUUNA_MISSIONS_DEBUG;
 	});
 
 	afterEach(() => {
-		if (saved.level === undefined) delete process.env.SEEDS_LOG_LEVEL;
-		else process.env.SEEDS_LOG_LEVEL = saved.level;
-		if (saved.debug === undefined) delete process.env.SEEDS_DEBUG;
-		else process.env.SEEDS_DEBUG = saved.debug;
+		if (saved.level === undefined) delete process.env.LUUNA_MISSIONS_LOG_LEVEL;
+		else process.env.LUUNA_MISSIONS_LOG_LEVEL = saved.level;
+		if (saved.debug === undefined) delete process.env.LUUNA_MISSIONS_DEBUG;
+		else process.env.LUUNA_MISSIONS_DEBUG = saved.debug;
 	});
 
 	test("defaults to info", () => {
 		expect(createLog({ pretty: false }).level).toBe("info");
 	});
 
-	test("SEEDS_DEBUG=1 flips the default to debug", () => {
-		process.env.SEEDS_DEBUG = "1";
+	test("LUUNA_MISSIONS_DEBUG=1 flips the default to debug", () => {
+		process.env.LUUNA_MISSIONS_DEBUG = "1";
 		expect(createLog({ pretty: false }).level).toBe("debug");
 	});
 
-	test("explicit SEEDS_LOG_LEVEL wins over SEEDS_DEBUG", () => {
-		process.env.SEEDS_DEBUG = "1";
-		process.env.SEEDS_LOG_LEVEL = "warn";
+	test("explicit LUUNA_MISSIONS_LOG_LEVEL wins over LUUNA_MISSIONS_DEBUG", () => {
+		process.env.LUUNA_MISSIONS_DEBUG = "1";
+		process.env.LUUNA_MISSIONS_LOG_LEVEL = "warn";
 		expect(createLog({ pretty: false }).level).toBe("warn");
 	});
 
-	test("unknown SEEDS_LOG_LEVEL falls back to info without throwing", () => {
-		process.env.SEEDS_LOG_LEVEL = "chatty";
+	test("unknown LUUNA_MISSIONS_LOG_LEVEL falls back to info without throwing", () => {
+		process.env.LUUNA_MISSIONS_LOG_LEVEL = "chatty";
 		expect(() => createLog({ pretty: false })).not.toThrow();
 		expect(createLog({ pretty: false }).level).toBe("info");
 	});
 
-	test("unknown SEEDS_LOG_LEVEL falls back through SEEDS_DEBUG=1 to debug", () => {
-		process.env.SEEDS_LOG_LEVEL = "verbose";
-		process.env.SEEDS_DEBUG = "1";
+	test("unknown LUUNA_MISSIONS_LOG_LEVEL falls back through LUUNA_MISSIONS_DEBUG=1 to debug", () => {
+		process.env.LUUNA_MISSIONS_LOG_LEVEL = "verbose";
+		process.env.LUUNA_MISSIONS_DEBUG = "1";
 		expect(createLog({ pretty: false }).level).toBe("debug");
 	});
 
 	test("each documented pino level is accepted", () => {
 		for (const lvl of ["trace", "debug", "info", "warn", "error", "fatal", "silent"]) {
-			process.env.SEEDS_LOG_LEVEL = lvl;
+			process.env.LUUNA_MISSIONS_LOG_LEVEL = lvl;
 			expect(createLog({ pretty: false }).level).toBe(lvl);
 		}
 	});

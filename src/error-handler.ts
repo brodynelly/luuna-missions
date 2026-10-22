@@ -1,4 +1,4 @@
-// Top-level error handler for the `sd` CLI.
+// Top-level error handler for the `luuna-missions` CLI.
 //
 // Extracted from src/index.ts so it can be tested without booting the
 // commander program at module load. The handler must surface the original

@@ -33,12 +33,12 @@ interface DoctorResult {
 	fixed?: string[];
 }
 
-function seedsDir(dir: string): string {
-	return join(dir, ".seeds");
+function missionsDir(dir: string): string {
+	return join(dir, ".luuna/missions");
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-doctor-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-doctor-test-"));
 });
 
 afterEach(async () => {
@@ -46,7 +46,7 @@ afterEach(async () => {
 });
 
 describe("doctor: config check", () => {
-	test("fails when .seeds/ directory is missing", async () => {
+	test("fails when .luuna/missions/ directory is missing", async () => {
 		const { exitCode } = await run(["doctor"], tmpDir);
 		expect(exitCode).not.toBe(0);
 	});
@@ -62,7 +62,7 @@ describe("doctor: config check", () => {
 describe("doctor: jsonl-integrity check", () => {
 	test("fails on malformed JSON lines", async () => {
 		await run(["init"], tmpDir);
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), '{"id":"a"}\nNOT JSON\n');
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), '{"id":"a"}\nNOT JSON\n');
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "jsonl-integrity");
@@ -83,8 +83,8 @@ describe("doctor: jsonl-integrity check", () => {
 		await run(["init"], tmpDir);
 		// Create a valid issue first, then corrupt the file
 		await run(["create", "--title", "Valid issue"], tmpDir);
-		const content = readFileSync(join(seedsDir(tmpDir), "issues.jsonl"), "utf8");
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${content}BROKEN LINE\n`);
+		const content = readFileSync(join(missionsDir(tmpDir), "issues.jsonl"), "utf8");
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${content}BROKEN LINE\n`);
 
 		// Verify broken
 		const before = await runJson<DoctorResult>(["doctor"], tmpDir);
@@ -113,7 +113,7 @@ describe("doctor: schema-validation check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${bad}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${bad}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "schema-validation");
@@ -132,7 +132,7 @@ describe("doctor: schema-validation check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${bad}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${bad}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "schema-validation");
@@ -151,7 +151,7 @@ describe("doctor: schema-validation check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${bad}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${bad}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "schema-validation");
@@ -182,7 +182,7 @@ describe("doctor: duplicate-ids check", () => {
 			updatedAt: now,
 		};
 		const line = JSON.stringify(issue);
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${line}\n${line}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${line}\n${line}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "duplicate-ids");
@@ -212,7 +212,7 @@ describe("doctor: duplicate-ids check", () => {
 			updatedAt: now,
 		};
 		const line = JSON.stringify(issue);
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${line}\n${line}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${line}\n${line}\n`);
 
 		const after = await runJson<DoctorResult>(["doctor", "--fix"], tmpDir);
 		const check = after.checks.find((ch) => ch.name === "duplicate-ids");
@@ -234,7 +234,7 @@ describe("doctor: referential-integrity check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "referential-integrity");
@@ -266,7 +266,7 @@ describe("doctor: referential-integrity check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const after = await runJson<DoctorResult>(["doctor", "--fix"], tmpDir);
 		const check = after.checks.find((ch) => ch.name === "referential-integrity");
@@ -297,7 +297,7 @@ describe("doctor: bidirectional-consistency check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issueA}\n${issueB}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issueA}\n${issueB}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "bidirectional-consistency");
@@ -326,7 +326,7 @@ describe("doctor: bidirectional-consistency check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issueA}\n${issueB}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issueA}\n${issueB}\n`);
 
 		const after = await runJson<DoctorResult>(["doctor", "--fix"], tmpDir);
 		const check = after.checks.find((ch) => ch.name === "bidirectional-consistency");
@@ -360,7 +360,7 @@ describe("doctor: circular-dependencies check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issueA}\n${issueB}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issueA}\n${issueB}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "circular-dependencies");
@@ -382,7 +382,7 @@ describe("doctor: circular-dependencies check", () => {
 describe("doctor: stale-locks check", () => {
 	test("warns on stale lock file", async () => {
 		await run(["init"], tmpDir);
-		const lockPath = join(seedsDir(tmpDir), "issues.jsonl.lock");
+		const lockPath = join(missionsDir(tmpDir), "issues.jsonl.lock");
 		writeFileSync(lockPath, "");
 		// Set mtime to 60s ago to make it stale
 		const past = new Date(Date.now() - 60_000);
@@ -404,7 +404,7 @@ describe("doctor: stale-locks check", () => {
 
 	test("--fix removes stale lock files", async () => {
 		await run(["init"], tmpDir);
-		const lockPath = join(seedsDir(tmpDir), "issues.jsonl.lock");
+		const lockPath = join(missionsDir(tmpDir), "issues.jsonl.lock");
 		writeFileSync(lockPath, "");
 		const past = new Date(Date.now() - 60_000);
 		const { utimesSync } = await import("node:fs");
@@ -429,7 +429,7 @@ describe("doctor: extensions-schema check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "extensions-schema");
@@ -450,7 +450,7 @@ describe("doctor: extensions-schema check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "extensions-schema");
@@ -470,7 +470,7 @@ describe("doctor: extensions-schema check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "extensions-schema");
@@ -490,7 +490,7 @@ describe("doctor: extensions-schema check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "extensions-schema");
@@ -519,13 +519,13 @@ describe("doctor: extensions-schema check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const after = await runJson<DoctorResult>(["doctor", "--fix"], tmpDir);
 		const check = after.checks.find((ch) => ch.name === "extensions-schema");
 		expect(check?.status).toBe("pass");
 
-		const content = readFileSync(join(seedsDir(tmpDir), "issues.jsonl"), "utf8");
+		const content = readFileSync(join(missionsDir(tmpDir), "issues.jsonl"), "utf8");
 		const parsed = JSON.parse(content.trim()) as { extensions?: unknown };
 		expect(parsed.extensions).toBeUndefined();
 	});
@@ -564,9 +564,9 @@ describe("doctor: gitattributes check", () => {
 		expect(check?.status).toBe("pass");
 
 		const content = readFileSync(gitattrsPath, "utf8");
-		expect(content).toContain(".seeds/issues.jsonl merge=union");
-		expect(content).toContain(".seeds/templates.jsonl merge=union");
-		expect(content).toContain(".seeds/plans.jsonl merge=union");
+		expect(content).toContain(".luuna/missions/issues.jsonl merge=union");
+		expect(content).toContain(".luuna/missions/templates.jsonl merge=union");
+		expect(content).toContain(".luuna/missions/plans.jsonl merge=union");
 	});
 
 	test("warns when only the plans.jsonl entry is missing", async () => {
@@ -575,13 +575,13 @@ describe("doctor: gitattributes check", () => {
 		// Simulate a project whose .gitattributes predates plans support.
 		writeFileSync(
 			gitattrsPath,
-			".seeds/issues.jsonl merge=union\n.seeds/templates.jsonl merge=union\n",
+			".luuna/missions/issues.jsonl merge=union\n.luuna/missions/templates.jsonl merge=union\n",
 		);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "gitattributes");
 		expect(check?.status).toBe("warn");
-		expect(check?.details).toContain("Missing: .seeds/plans.jsonl merge=union");
+		expect(check?.details).toContain("Missing: .luuna/missions/plans.jsonl merge=union");
 	});
 
 	test("--fix backfills a missing plans.jsonl entry", async () => {
@@ -589,13 +589,13 @@ describe("doctor: gitattributes check", () => {
 		const gitattrsPath = join(tmpDir, ".gitattributes");
 		writeFileSync(
 			gitattrsPath,
-			".seeds/issues.jsonl merge=union\n.seeds/templates.jsonl merge=union\n",
+			".luuna/missions/issues.jsonl merge=union\n.luuna/missions/templates.jsonl merge=union\n",
 		);
 
 		const after = await runJson<DoctorResult>(["doctor", "--fix"], tmpDir);
 		const check = after.checks.find((ch) => ch.name === "gitattributes");
 		expect(check?.status).toBe("pass");
-		expect(readFileSync(gitattrsPath, "utf8")).toContain(".seeds/plans.jsonl merge=union");
+		expect(readFileSync(gitattrsPath, "utf8")).toContain(".luuna/missions/plans.jsonl merge=union");
 	});
 });
 
@@ -640,7 +640,7 @@ describe("doctor: closed-fields-consistency check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "closed-fields-consistency");
@@ -663,7 +663,7 @@ describe("doctor: closed-fields-consistency check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "closed-fields-consistency");
@@ -682,7 +682,7 @@ describe("doctor: closed-fields-consistency check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const result = await runJson<DoctorResult>(["doctor"], tmpDir);
 		const check = result.checks.find((ch) => ch.name === "closed-fields-consistency");
@@ -713,13 +713,13 @@ describe("doctor: closed-fields-consistency check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const after = await runJson<DoctorResult>(["doctor", "--fix"], tmpDir);
 		const check = after.checks.find((ch) => ch.name === "closed-fields-consistency");
 		expect(check?.status).toBe("pass");
 
-		const content = readFileSync(join(seedsDir(tmpDir), "issues.jsonl"), "utf8");
+		const content = readFileSync(join(missionsDir(tmpDir), "issues.jsonl"), "utf8");
 		const parsed = JSON.parse(content.trim()) as { closedAt?: unknown; closeReason?: unknown };
 		expect(parsed.closedAt).toBeUndefined();
 		expect(parsed.closeReason).toBeUndefined();
@@ -737,13 +737,13 @@ describe("doctor: closed-fields-consistency check", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const after = await runJson<DoctorResult>(["doctor", "--fix"], tmpDir);
 		const check = after.checks.find((ch) => ch.name === "closed-fields-consistency");
 		expect(check?.status).toBe("pass");
 
-		const content = readFileSync(join(seedsDir(tmpDir), "issues.jsonl"), "utf8");
+		const content = readFileSync(join(missionsDir(tmpDir), "issues.jsonl"), "utf8");
 		const parsed = JSON.parse(content.trim()) as { closedAt?: string };
 		expect(parsed.closedAt).toBe(now);
 	});
@@ -769,7 +769,7 @@ describe("doctor: exit code", () => {
 			createdAt: now,
 			updatedAt: now,
 		});
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), `${issue}\n`);
 
 		const { exitCode } = await run(["doctor"], tmpDir);
 		expect(exitCode).toBe(0);
@@ -777,7 +777,7 @@ describe("doctor: exit code", () => {
 
 	test("exits 1 when failures present", async () => {
 		await run(["init"], tmpDir);
-		writeFileSync(join(seedsDir(tmpDir), "issues.jsonl"), "NOT JSON\n");
+		writeFileSync(join(missionsDir(tmpDir), "issues.jsonl"), "NOT JSON\n");
 
 		const { exitCode } = await run(["doctor"], tmpDir);
 		expect(exitCode).toBe(1);

@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { resolveFormat, stripAnsi, VALID_FORMATS } from "../format.ts";
 import {
 	accent,
@@ -41,7 +41,7 @@ function collectPositional(args: string[]): string[] {
 	return ids;
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const fmt = resolveFormat(args);
 	const jsonMode = fmt.mode === "json";
 	if (fmt.error) {
@@ -55,14 +55,14 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 	}
 
 	const ids = collectPositional(args);
-	if (ids.length === 0) throw new Error("Usage: sd show <id> [ids...]");
+	if (ids.length === 0) throw new Error("Usage: luuna-missions show <id> [ids...]");
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	const issues = await readIssues(dir);
 
 	if (ids.length === 1) {
 		const id = ids[0];
-		if (id === undefined) throw new Error("Usage: sd show <id> [ids...]");
+		if (id === undefined) throw new Error("Usage: luuna-missions show <id> [ids...]");
 		await renderSingle(id, issues, dir, fmt.mode);
 		return;
 	}
@@ -80,7 +80,7 @@ async function renderSingle(
 	if (!issue) {
 		if (id.startsWith("pl-")) {
 			if (mode !== "markdown" && mode !== "json") {
-				const errMsg = `sd show ${id}: --format ${mode} is not supported for plan ids; pass --json or use 'sd plan show ${id}'`;
+				const errMsg = `luuna-missions show ${id}: --format ${mode} is not supported for plan ids; pass --json or use 'luuna-missions plan show ${id}'`;
 				printError(errMsg);
 				process.exitCode = 1;
 				return;
@@ -149,7 +149,7 @@ async function renderMultiple(
 		if (id.startsWith("pl-")) {
 			return {
 				id,
-				error: `Plan id ${id} not supported in multi-id 'sd show'; run 'sd plan show ${id}' instead`,
+				error: `Plan id ${id} not supported in multi-id 'luuna-missions show'; run 'luuna-missions plan show ${id}' instead`,
 			};
 		}
 		return { id, error: `Issue not found: ${id}` };
@@ -252,7 +252,7 @@ function renderPlanBlock(
 		`${brand("Plan:")} ${accent(plan.id)}  ${muted(`[${plan.status}]`)}`,
 	];
 	if (plan.status === "draft") {
-		lines.push(`${accent("plan in draft — run sd plan submit")}`);
+		lines.push(`${accent("plan in draft — run luuna-missions plan submit")}`);
 	} else if (children && children.length > 0) {
 		lines.push(`${muted(`Plan steps (${children.length}):`)}`);
 		for (const c of children) {

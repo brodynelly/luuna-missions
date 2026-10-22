@@ -15,7 +15,7 @@ export interface Issue {
 	plan_step_index?: number;
 	requires_plan?: boolean;
 	// Provenance: the issue this one was discovered while working on
-	// (`sd create --from <id>`). Informational only — never blocks.
+	// (`luuna-missions create --from <id>`). Informational only — never blocks.
 	discoveredFrom?: string;
 	// Roots idea id(s) this issue implements (`--intent r-xxxx`). A string for
 	// one id, string[] for several; read directly by roots.
@@ -39,8 +39,8 @@ export interface Plan {
 	sections: Record<string, unknown>;
 	children: string[];
 	// Subset of `children` that were attached via adoption (existing_seed at
-	// submit time, or `sd plan adopt` post-submit) rather than fresh-spawned by
-	// the plan. Drives the "(adopted)" tag in `sd plan show` human output and
+	// submit time, or `luuna-missions plan adopt` post-submit) rather than fresh-spawned by
+	// the plan. Drives the "(adopted)" tag in `luuna-missions plan show` human output and
 	// is preserved across overwrites for children that survive the rewrite.
 	adoptedChildren?: string[];
 	outcome?: PlanOutcome;
@@ -69,11 +69,11 @@ export interface Config {
 	max_plan_depth?: number;
 }
 
-// PLAN_SPEC.md:430 — display-only depth limit for `sd plan show` recursion.
+// PLAN_SPEC.md:430 — display-only depth limit for `luuna-missions plan show` recursion.
 export const DEFAULT_MAX_PLAN_DEPTH = 3;
 
 // Plan template config — what `plan_templates:` in config.yaml resolves to.
-// Compiled into AJV schema by src/plan-schema.ts (Phase 2 task seeds-6bd8).
+// Compiled into AJV schema by src/plan-schema.ts (Phase 2 task missions-6bd8).
 export type SectionKindLiteral = "text" | "list" | "steps";
 
 export interface SectionSpec {
@@ -83,7 +83,7 @@ export interface SectionSpec {
 	min_length?: number;
 	min?: number;
 	item?: "text" | Record<string, SectionSpec>;
-	mulch_source?: string;
+	atlas_source?: string;
 }
 
 export interface PlanTemplate {
@@ -94,7 +94,7 @@ export interface PlanTemplate {
 
 export const SECTION_KINDS: readonly SectionKindLiteral[] = ["text", "list", "steps"] as const;
 
-export const SEEDS_DIR_NAME = ".seeds";
+export const MISSIONS_DIR = ".luuna/missions";
 export const ISSUES_FILE = "issues.jsonl";
 export const TEMPLATES_FILE = "templates.jsonl";
 export const PLANS_FILE = "plans.jsonl";

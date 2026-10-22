@@ -62,7 +62,7 @@
 			"includes": [
 				"src/index.ts",
 				"src/plan-domain.ts",
-				"src/plan-mulch.ts",
+				"src/plan-atlas.ts",
 				"src/plan-schema.ts",
 				"src/test-harness.ts",
 				"src/validation.ts",

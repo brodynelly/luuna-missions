@@ -1,4 +1,4 @@
-# Bun runtime configuration for seeds.
+# Bun runtime configuration for missions.
 # See https://bun.sh/docs/runtime/bunfig for available options.
 #
 # Tests live next to the file under test (e.g. src/foo.test.ts,

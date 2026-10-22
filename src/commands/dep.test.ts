@@ -23,7 +23,7 @@ let id2: string;
 let id3: string;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-dep-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-dep-test-"));
 	await run(["init"], tmpDir);
 
 	const c1 = await runJson<{ success: boolean; id: string }>(
@@ -47,7 +47,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd dep add", () => {
+describe("luuna-missions dep add", () => {
 	test("adds dependency between two issues", async () => {
 		const result = await runJson<{ success: boolean }>(["dep", "add", id2, id1], tmpDir);
 		expect(result.success).toBe(true);
@@ -117,7 +117,7 @@ describe("sd dep add", () => {
 	});
 });
 
-describe("sd dep remove", () => {
+describe("luuna-missions dep remove", () => {
 	beforeEach(async () => {
 		await run(["dep", "add", id2, id1], tmpDir);
 	});
@@ -146,7 +146,7 @@ describe("sd dep remove", () => {
 	});
 });
 
-describe("sd dep list", () => {
+describe("luuna-missions dep list", () => {
 	test("lists dependencies for an issue", async () => {
 		await run(["dep", "add", id2, id1], tmpDir);
 		const result = await runJson<{ success: boolean; blockedBy: string[]; blocks: string[] }>(
@@ -177,7 +177,7 @@ describe("sd dep list", () => {
 	});
 });
 
-describe("sd ready (dependency aware)", () => {
+describe("luuna-missions ready (dependency aware)", () => {
 	test("blocked issue is not ready", async () => {
 		await run(["dep", "add", id2, id1], tmpDir);
 		const result = await runJson<{ success: boolean; issues: Array<{ id: string }> }>(

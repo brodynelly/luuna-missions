@@ -1,4 +1,4 @@
-// Regression for seeds-3df8: every enum-style validation error in the CLI
+// Regression for missions-3df8: every enum-style validation error in the CLI
 // surface (src/commands/ and src/format.ts) must use the canonical
 // `Invalid --X value: <val>. Valid: a|b|c` wording. Catches regressions where
 // a new command grows back the old `must be one of: a, b, c` phrasing or

@@ -13,31 +13,31 @@ async function run(
 	return runCli(args, cwd);
 }
 
-async function initSeeds(cwd: string): Promise<void> {
+async function initMissions(cwd: string): Promise<void> {
 	await run(["init"], cwd);
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-prime-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-prime-test-"));
 });
 
 afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd prime", () => {
-	test("outputs full prime content without .seeds/ initialized", async () => {
+describe("luuna-missions prime", () => {
+	test("outputs full prime content without .luuna/missions/ initialized", async () => {
 		const { stdout, exitCode } = await run(["prime"], tmpDir);
 		expect(exitCode).toBe(0);
-		expect(stdout).toContain("Seeds Workflow Context");
+		expect(stdout).toContain("Missions Workflow Context");
 		expect(stdout).toContain("Session Close Protocol");
-		expect(stdout).toContain("sd ready");
+		expect(stdout).toContain("luuna-missions ready");
 	});
 
 	test("outputs compact content with --compact", async () => {
 		const { stdout, exitCode } = await run(["prime", "--compact"], tmpDir);
 		expect(exitCode).toBe(0);
-		expect(stdout).toContain("Seeds Quick Reference");
+		expect(stdout).toContain("Missions Quick Reference");
 		expect(stdout).not.toContain("Session Close Protocol");
 	});
 
@@ -47,21 +47,21 @@ describe("sd prime", () => {
 		const result = JSON.parse(stdout) as { success: boolean; command: string; content: string };
 		expect(result.success).toBe(true);
 		expect(result.command).toBe("prime");
-		expect(result.content).toContain("Seeds Workflow Context");
+		expect(result.content).toContain("Missions Workflow Context");
 	});
 
 	test("--export outputs default template even with custom PRIME.md", async () => {
-		await initSeeds(tmpDir);
-		await Bun.write(join(tmpDir, ".seeds", "PRIME.md"), "custom prime content");
+		await initMissions(tmpDir);
+		await Bun.write(join(tmpDir, ".luuna/missions", "PRIME.md"), "custom prime content");
 		const { stdout, exitCode } = await run(["prime", "--export"], tmpDir);
 		expect(exitCode).toBe(0);
-		expect(stdout).toContain("Seeds Workflow Context");
+		expect(stdout).toContain("Missions Workflow Context");
 		expect(stdout).not.toContain("custom prime content");
 	});
 
 	test("uses custom PRIME.md when present", async () => {
-		await initSeeds(tmpDir);
-		await Bun.write(join(tmpDir, ".seeds", "PRIME.md"), "my custom agent context");
+		await initMissions(tmpDir);
+		await Bun.write(join(tmpDir, ".luuna/missions", "PRIME.md"), "my custom agent context");
 		const { stdout, exitCode } = await run(["prime"], tmpDir);
 		expect(exitCode).toBe(0);
 		expect(stdout.startsWith("my custom agent context\n\n## Current State")).toBe(true);
@@ -80,19 +80,19 @@ describe("sd prime", () => {
 		expect(exitCode).toBe(0);
 		const result = JSON.parse(stdout) as { success: boolean; content: string };
 		expect(result.success).toBe(true);
-		expect(result.content).toContain("Seeds Workflow Context");
+		expect(result.content).toContain("Missions Workflow Context");
 	});
 
 	test("full content includes plan-aware workflow hints (Phase 5)", async () => {
 		const { stdout } = await run(["prime"], tmpDir);
 		expect(stdout).toContain("Planning");
-		expect(stdout).toContain("sd plan prompt");
-		expect(stdout).toContain("sd plan submit");
+		expect(stdout).toContain("luuna-missions plan prompt");
+		expect(stdout).toContain("luuna-missions plan submit");
 	});
 
-	test("compact content mentions sd plan", async () => {
+	test("compact content mentions luuna-missions plan", async () => {
 		const { stdout } = await run(["prime", "--compact"], tmpDir);
-		expect(stdout).toContain("sd plan");
+		expect(stdout).toContain("luuna-missions plan");
 	});
 
 	test("--json emits structured sections for full mode", async () => {
@@ -117,11 +117,11 @@ describe("sd prime", () => {
 		};
 		expect(result.success).toBe(true);
 		expect(result.sections.mode).toBe("full");
-		expect(result.sections.title).toBe("Seeds Workflow Context");
+		expect(result.sections.title).toBe("Missions Workflow Context");
 
 		// Close protocol has 4 steps.
 		expect(result.sections.closeProtocol.steps).toHaveLength(4);
-		expect(result.sections.closeProtocol.steps[0]).toContain("sd close");
+		expect(result.sections.closeProtocol.steps[0]).toContain("luuna-missions close");
 
 		// Rules are non-empty.
 		expect(result.sections.rules.length).toBeGreaterThan(0);
@@ -138,22 +138,22 @@ describe("sd prime", () => {
 		// Each command has a structured shape.
 		const findingWork = result.sections.commandGroups.find((g) => g.name === "Finding Work");
 		expect(findingWork).toBeDefined();
-		const ready = findingWork?.commands.find((c) => c.command === "sd ready");
+		const ready = findingWork?.commands.find((c) => c.command === "luuna-missions ready");
 		expect(ready?.description).toBe("Show issues ready to work (no blockers)");
 
 		// Planning group carries the explanatory note.
 		const planning = result.sections.commandGroups.find((g) => g.name === "Planning");
-		expect(planning?.notes?.[0]).toContain("sd plan");
+		expect(planning?.notes?.[0]).toContain("luuna-missions plan");
 
 		// Workflows expose name + shell commands.
 		const wfNames = result.sections.workflows.map((w) => w.name);
 		expect(wfNames).toContain("Starting work");
 		expect(wfNames).toContain("Completing work");
 		const starting = result.sections.workflows.find((w) => w.name === "Starting work");
-		expect(starting?.commands[0]).toContain("sd ready");
+		expect(starting?.commands[0]).toContain("luuna-missions ready");
 
 		// Backward compat: content still present and matches markdown.
-		expect(result.content).toContain("Seeds Workflow Context");
+		expect(result.content).toContain("Missions Workflow Context");
 		expect(result.content).toContain("Finding Work");
 	});
 
@@ -171,17 +171,17 @@ describe("sd prime", () => {
 			content: string;
 		};
 		expect(result.sections.mode).toBe("compact");
-		expect(result.sections.title).toBe("Seeds Quick Reference");
+		expect(result.sections.title).toBe("Missions Quick Reference");
 		expect(result.sections.commands.length).toBeGreaterThan(0);
-		expect(result.sections.commands.some((c) => c.command === "sd ready")).toBe(true);
-		expect(result.sections.planningNote).toContain("sd plan");
-		expect(result.sections.closingNote).toContain("sd sync");
-		expect(result.content).toContain("Seeds Quick Reference");
+		expect(result.sections.commands.some((c) => c.command === "luuna-missions ready")).toBe(true);
+		expect(result.sections.planningNote).toContain("luuna-missions plan");
+		expect(result.sections.closingNote).toContain("luuna-missions sync");
+		expect(result.content).toContain("Missions Quick Reference");
 	});
 
 	test("--json with custom PRIME.md sets sections to null", async () => {
-		await initSeeds(tmpDir);
-		await Bun.write(join(tmpDir, ".seeds", "PRIME.md"), "my custom agent context");
+		await initMissions(tmpDir);
+		await Bun.write(join(tmpDir, ".luuna/missions", "PRIME.md"), "my custom agent context");
 		const { stdout, exitCode } = await run(["prime", "--json"], tmpDir);
 		expect(exitCode).toBe(0);
 		const result = JSON.parse(stdout) as {
@@ -195,8 +195,8 @@ describe("sd prime", () => {
 	});
 
 	test("--export --json emits structured sections regardless of custom PRIME.md", async () => {
-		await initSeeds(tmpDir);
-		await Bun.write(join(tmpDir, ".seeds", "PRIME.md"), "custom prime content");
+		await initMissions(tmpDir);
+		await Bun.write(join(tmpDir, ".luuna/missions", "PRIME.md"), "custom prime content");
 		const { stdout, exitCode } = await run(["prime", "--export", "--json"], tmpDir);
 		expect(exitCode).toBe(0);
 		const result = JSON.parse(stdout) as {
@@ -205,12 +205,12 @@ describe("sd prime", () => {
 		};
 		expect(result.sections).not.toBeNull();
 		expect(result.sections?.mode).toBe("full");
-		expect(result.content).toContain("Seeds Workflow Context");
+		expect(result.content).toContain("Missions Workflow Context");
 		expect(result.content).not.toContain("custom prime content");
 	});
 
 	test("appends live state: in-progress issues and top ready", async () => {
-		await initSeeds(tmpDir);
+		await initMissions(tmpDir);
 		for (let i = 0; i < 7; i++) await run(["create", "--title", `Task ${String(i)}`], tmpDir);
 		await run(["create", "--title", "Urgent", "--priority", "0"], tmpDir);
 		const created = await run(["create", "--title", "Mine", "--json"], tmpDir);
@@ -227,7 +227,7 @@ describe("sd prime", () => {
 	});
 
 	test("--json carries structured state", async () => {
-		await initSeeds(tmpDir);
+		await initMissions(tmpDir);
 		await run(["create", "--title", "One"], tmpDir);
 		const { stdout } = await run(["prime", "--json"], tmpDir);
 		const result = JSON.parse(stdout) as {
@@ -243,21 +243,21 @@ describe("sd prime", () => {
 	test("empty project reports no ready work; no project omits state", async () => {
 		const bare = await run(["prime", "--json"], tmpDir);
 		expect((JSON.parse(bare.stdout) as { state: unknown }).state).toBeNull();
-		await initSeeds(tmpDir);
+		await initMissions(tmpDir);
 		const { stdout } = await run(["prime", "--compact"], tmpDir);
 		expect(stdout).toContain("Ready: none");
 		expect(stdout).not.toContain("In progress:");
 	});
 
 	test("--export omits live state", async () => {
-		await initSeeds(tmpDir);
+		await initMissions(tmpDir);
 		await run(["create", "--title", "One"], tmpDir);
 		const { stdout } = await run(["prime", "--export"], tmpDir);
 		expect(stdout).not.toContain("Current State");
 	});
 
 	test("close checklist uses `bun run verify` only when package.json defines it", async () => {
-		await initSeeds(tmpDir);
+		await initMissions(tmpDir);
 		const before = await run(["prime"], tmpDir);
 		expect(before.stdout).not.toContain("bun run verify");
 		expect(before.stdout).toContain("the project's quality gates");

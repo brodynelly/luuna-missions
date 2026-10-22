@@ -1,4 +1,4 @@
-// In-process test harness for capturing seeds CLI output.
+// In-process test harness for capturing missions CLI output.
 //
 // Instead of spawning `bun run src/index.ts <args>` for every assertion (which
 // pays full Bun startup + module resolution + commander parsing overhead per
@@ -33,7 +33,7 @@ export interface RunResult {
 	exitCode: number;
 }
 
-type CommandRun = (args: string[], seedsDir?: string) => Promise<void>;
+type CommandRun = (args: string[], missionsDir?: string) => Promise<void>;
 type RegisterFn = (program: Command) => void;
 interface CommandModule {
 	run?: CommandRun;
@@ -94,7 +94,7 @@ function toText(chunk: unknown): string {
 }
 
 /**
- * Run a seeds CLI command in-process and capture its output.
+ * Run a missions CLI command in-process and capture its output.
  *
  * @param args  CLI args including the command name, e.g. ["list", "--json"].
  * @param cwd   Working directory to run from. The harness chdirs here, runs
@@ -181,12 +181,12 @@ export async function runCli(args: string[], cwd: string): Promise<RunResult> {
 
 	let thrown: unknown;
 	try {
-		const seedsDir = join(cwd, ".seeds");
+		const missionsDir = join(cwd, ".luuna/missions");
 		if (typeof mod.run === "function") {
-			// Commands that don't accept a seedsDir parameter (init, prime,
+			// Commands that don't accept a missionsDir parameter (init, prime,
 			// onboard, upgrade, migrate) ignore the extra arg; chdir above
 			// handles their cwd-based resolution.
-			await mod.run(args.slice(1), seedsDir);
+			await mod.run(args.slice(1), missionsDir);
 		} else if (typeof mod.register === "function") {
 			// Commands like plan, config, setup, and completions don't expose a
 			// flat run(args) entry point — they wire subcommands directly via
@@ -196,7 +196,7 @@ export async function runCli(args: string[], cwd: string): Promise<RunResult> {
 			program.exitOverride();
 			mod.register(program);
 			// Propagate exitOverride to subcommands recursively. Commander does
-			// NOT inherit the override down the tree, so `sd plan --help` (or
+			// NOT inherit the override down the tree, so `luuna-missions plan --help` (or
 			// any nested `--help`) would otherwise call process.exit(0) and
 			// kill the bun:test runner mid-suite.
 			const applyOverride = (c: Command): void => {
@@ -204,7 +204,7 @@ export async function runCli(args: string[], cwd: string): Promise<RunResult> {
 				for (const child of c.commands) applyOverride(child);
 			};
 			for (const child of program.commands) applyOverride(child);
-			await program.parseAsync(["bun", "sd", cmd, ...args.slice(1)]);
+			await program.parseAsync(["bun", "luuna-missions", cmd, ...args.slice(1)]);
 		} else {
 			throw new Error(`runCli: command "${cmd}" exports neither run nor register`);
 		}

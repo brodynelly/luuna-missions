@@ -27,7 +27,7 @@ async function create(title: string, priority: number, cwd: string): Promise<str
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-listsort-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-listsort-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -35,7 +35,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd list sort", () => {
+describe("luuna-missions list sort", () => {
 	test("defaults to priority asc, P0 first", async () => {
 		await create("low", 3, tmpDir);
 		await create("crit", 0, tmpDir);
@@ -77,7 +77,7 @@ describe("sd list sort", () => {
 	});
 });
 
-describe("sd ready sort", () => {
+describe("luuna-missions ready sort", () => {
 	test("defaults to priority asc, P0 first", async () => {
 		await create("low", 3, tmpDir);
 		await create("crit", 0, tmpDir);
@@ -107,7 +107,7 @@ describe("sd ready sort", () => {
 	});
 });
 
-describe("sd ready filters", () => {
+describe("luuna-missions ready filters", () => {
 	async function createTyped(
 		title: string,
 		type: string,
@@ -208,7 +208,7 @@ describe("sd ready filters", () => {
 	});
 });
 
-describe("sd list/ready priority filters", () => {
+describe("luuna-missions list/ready priority filters", () => {
 	test("--priority numeric exact match (single)", async () => {
 		const crit = await create("crit", 0, tmpDir);
 		await create("med", 2, tmpDir);
@@ -279,7 +279,7 @@ describe("sd list/ready priority filters", () => {
 		expect(ids).toHaveLength(2);
 	});
 
-	test("sd ready honors --priority", async () => {
+	test("luuna-missions ready honors --priority", async () => {
 		const crit = await create("crit", 0, tmpDir);
 		await create("low", 3, tmpDir);
 		const result = await runJson<{ issues: Array<{ id: string }> }>(
@@ -289,7 +289,7 @@ describe("sd list/ready priority filters", () => {
 		expect(result.issues.map((i) => i.id)).toEqual([crit]);
 	});
 
-	test("sd ready honors --priority-max", async () => {
+	test("luuna-missions ready honors --priority-max", async () => {
 		const crit = await create("crit", 0, tmpDir);
 		const high = await create("high", 1, tmpDir);
 		await create("med", 2, tmpDir);
@@ -317,7 +317,7 @@ describe("sd list/ready priority filters", () => {
 });
 
 describe("--limit validation", () => {
-	test("sd list --limit 0 returns zero issues (not the default 50)", async () => {
+	test("luuna-missions list --limit 0 returns zero issues (not the default 50)", async () => {
 		await create("a", 2, tmpDir);
 		await create("b", 2, tmpDir);
 		const result = await runJson<{ issues: unknown[]; count: number }>(
@@ -328,21 +328,21 @@ describe("--limit validation", () => {
 		expect(result.count).toBe(0);
 	});
 
-	test("sd list rejects negative --limit", async () => {
+	test("luuna-missions list rejects negative --limit", async () => {
 		await create("a", 2, tmpDir);
 		const { exitCode, stderr } = await run(["list", "--limit", "-1"], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain("Invalid --limit");
 	});
 
-	test("sd list rejects non-numeric --limit", async () => {
+	test("luuna-missions list rejects non-numeric --limit", async () => {
 		await create("a", 2, tmpDir);
 		const { exitCode, stderr } = await run(["list", "--limit", "abc"], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain("Invalid --limit");
 	});
 
-	test("sd list --limit invalid surfaces error in JSON mode", async () => {
+	test("luuna-missions list --limit invalid surfaces error in JSON mode", async () => {
 		await create("a", 2, tmpDir);
 		const { stdout, exitCode } = await run(["list", "--limit", "-1", "--json"], tmpDir);
 		expect(exitCode).not.toBe(0);
@@ -351,20 +351,20 @@ describe("--limit validation", () => {
 		expect(parsed.error).toContain("Invalid --limit");
 	});
 
-	test("sd ready --limit 0 returns zero issues", async () => {
+	test("luuna-missions ready --limit 0 returns zero issues", async () => {
 		await create("a", 2, tmpDir);
 		const result = await runJson<{ issues: unknown[] }>(["ready", "--limit", "0"], tmpDir);
 		expect(result.issues).toHaveLength(0);
 	});
 
-	test("sd ready rejects negative --limit", async () => {
+	test("luuna-missions ready rejects negative --limit", async () => {
 		await create("a", 2, tmpDir);
 		const { exitCode, stderr } = await run(["ready", "--limit", "-1"], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain("Invalid --limit");
 	});
 
-	test("sd search --limit 0 returns zero issues", async () => {
+	test("luuna-missions search --limit 0 returns zero issues", async () => {
 		await create("alpha", 2, tmpDir);
 		await create("alphabet", 2, tmpDir);
 		const result = await runJson<{ issues: unknown[] }>(
@@ -374,7 +374,7 @@ describe("--limit validation", () => {
 		expect(result.issues).toHaveLength(0);
 	});
 
-	test("sd search rejects negative --limit", async () => {
+	test("luuna-missions search rejects negative --limit", async () => {
 		await create("alpha", 2, tmpDir);
 		const { exitCode, stderr } = await run(["search", "alpha", "--limit", "-1"], tmpDir);
 		expect(exitCode).not.toBe(0);
@@ -382,7 +382,7 @@ describe("--limit validation", () => {
 	});
 });
 
-describe("sd list -q gates plan suffix branch (seeds-6848)", () => {
+describe("luuna-missions list -q gates plan suffix branch (missions-6848)", () => {
 	async function attachPlan(seedId: string, status = "approved"): Promise<void> {
 		const now = new Date().toISOString();
 		const planRow = {
@@ -396,13 +396,13 @@ describe("sd list -q gates plan suffix branch (seeds-6848)", () => {
 			createdAt: now,
 			updatedAt: now,
 		};
-		const planPath = join(tmpDir, ".seeds", "plans.jsonl");
+		const planPath = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const existing = (await Bun.file(planPath).exists()) ? await Bun.file(planPath).text() : "";
 		await Bun.write(
 			planPath,
 			`${existing.trim() ? `${existing.trimEnd()}\n` : ""}${JSON.stringify(planRow)}\n`,
 		);
-		const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+		const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 		const text = await Bun.file(issuesPath).text();
 		const lines = text.split("\n").filter((l) => l.trim());
 		const updated = lines.map((l) => {
@@ -413,7 +413,7 @@ describe("sd list -q gates plan suffix branch (seeds-6848)", () => {
 		await Bun.write(issuesPath, `${updated.join("\n")}\n`);
 	}
 
-	test("sd list -q suppresses the issue line for seeds carrying plan suffixes", async () => {
+	test("luuna-missions list -q suppresses the issue line for missions carrying plan suffixes", async () => {
 		const id = await create("planned", 2, tmpDir);
 		await attachPlan(id);
 		const { stdout } = await run(["list", "-q"], tmpDir);
@@ -421,7 +421,7 @@ describe("sd list -q gates plan suffix branch (seeds-6848)", () => {
 		expect(stdout).not.toContain("[plan approved]");
 	});
 
-	test("sd ready -q suppresses the issue line for seeds carrying plan suffixes", async () => {
+	test("luuna-missions ready -q suppresses the issue line for missions carrying plan suffixes", async () => {
 		const id = await create("planned", 2, tmpDir);
 		await attachPlan(id);
 		const { stdout } = await run(["ready", "-q"], tmpDir);
@@ -429,7 +429,7 @@ describe("sd list -q gates plan suffix branch (seeds-6848)", () => {
 		expect(stdout).not.toContain("[plan approved]");
 	});
 
-	test("sd list without -q still emits plan suffix", async () => {
+	test("luuna-missions list without -q still emits plan suffix", async () => {
 		const id = await create("planned", 2, tmpDir);
 		await attachPlan(id);
 		const { stdout } = await run(["list"], tmpDir);
@@ -438,7 +438,7 @@ describe("sd list -q gates plan suffix branch (seeds-6848)", () => {
 	});
 });
 
-describe("sd list --status / --type validation", () => {
+describe("luuna-missions list --status / --type validation", () => {
 	test("rejects invalid --status value (human)", async () => {
 		const { exitCode, stderr } = await run(["list", "--status", "bogus"], tmpDir);
 		expect(exitCode).not.toBe(0);

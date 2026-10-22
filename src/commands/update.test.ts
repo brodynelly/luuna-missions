@@ -32,7 +32,7 @@ async function showExtensions(
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-update-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-update-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -40,7 +40,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd update --extensions", () => {
+describe("luuna-missions update --extensions", () => {
 	test("sets extensions on an issue with no prior extensions", async () => {
 		const id = await create("ext-1", tmpDir);
 		const { exitCode } = await run(
@@ -141,7 +141,7 @@ describe("sd update --extensions", () => {
 	});
 });
 
-describe("sd update --status reopen", () => {
+describe("luuna-missions update --status reopen", () => {
 	type ShowResult = {
 		issue: { status: string; closedAt?: string; closeReason?: string };
 	};

@@ -1,21 +1,21 @@
 import { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { accent, muted, outputJson, printIssueOneLine } from "../output.ts";
 import { issuesPath, readIssues, withLock, writeIssues } from "../store.ts";
 import type { Issue } from "../types.ts";
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const positional = args.filter((a) => !a.startsWith("--"));
 
 	const subcmd = positional[0];
-	if (!subcmd) throw new Error("Usage: sd dep <add|remove|list> <issue> [depends-on]");
+	if (!subcmd) throw new Error("Usage: luuna-missions dep <add|remove|list> <issue> [depends-on]");
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 
 	if (subcmd === "list") {
 		const issueId = positional[1];
-		if (!issueId) throw new Error("Usage: sd dep list <issue>");
+		if (!issueId) throw new Error("Usage: luuna-missions dep list <issue>");
 		const issues = await readIssues(dir);
 		const issue = issues.find((i) => i.id === issueId);
 		if (!issue) throw new Error(`Issue not found: ${issueId}`);
@@ -63,7 +63,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		const issueId = positional[1];
 		const dependsOnId = positional[2];
 		if (!issueId || !dependsOnId) {
-			throw new Error(`Usage: sd dep ${subcmd} <issue> <depends-on>`);
+			throw new Error(`Usage: luuna-missions dep ${subcmd} <issue> <depends-on>`);
 		}
 		if (subcmd === "add" && issueId === dependsOnId) {
 			throw new Error(`Cannot add a self-dependency: ${issueId}`);

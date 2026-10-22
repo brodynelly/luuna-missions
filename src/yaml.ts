@@ -1,4 +1,4 @@
-// Minimal YAML parser/emitter for seeds config.yaml.
+// Minimal YAML parser/emitter for missions config.yaml.
 //
 // Supports the subset needed for `plan_templates:` (PLAN_SPEC.md:36-78):
 //   - Block-style nested mappings (indent-driven, any indent step).
@@ -9,7 +9,7 @@
 //   - `# comment` to end-of-line, ignored both whole-line and trailing.
 //
 // Not supported: anchors/aliases, block scalars (| / >), tags, multi-document
-// streams, complex keys. None of those appear in seeds config files.
+// streams, complex keys. None of those appear in missions config files.
 //
 // Kept in-tree per CLAUDE.md "minimal runtime dependencies". If this file grows
 // past ~250 LOC the js-yaml route is the right call.

@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { resolveFormat, stripAnsi, VALID_FORMATS } from "../format.ts";
 import {
 	formatIssueOneLine,
@@ -17,7 +17,7 @@ import {
 import { readIssues } from "../store.ts";
 import type { Issue } from "../types.ts";
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const fmt = resolveFormat(args);
 	const jsonMode = fmt.mode === "json";
 	if (fmt.error) {
@@ -29,7 +29,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		process.exitCode = 1;
 		return;
 	}
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	const issues = await readIssues(dir);
 	const planCtx = await loadPlanContext(dir);
 

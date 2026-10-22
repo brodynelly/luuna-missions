@@ -36,7 +36,7 @@ async function create(title: string, opts: CreateOpts, cwd: string): Promise<str
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-search-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-search-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -44,7 +44,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd search", () => {
+describe("luuna-missions search", () => {
 	test("matches substring in title", async () => {
 		const retry = await create("Add retry logic to fetcher", {}, tmpDir);
 		await create("Refactor logger", {}, tmpDir);
@@ -170,7 +170,7 @@ describe("sd search", () => {
 	test("missing query exits non-zero", async () => {
 		const { exitCode, stderr } = await run(["search"], tmpDir);
 		expect(exitCode).not.toBe(0);
-		expect(stderr.toLowerCase()).toMatch(/missing required argument|usage: sd search/);
+		expect(stderr.toLowerCase()).toMatch(/missing required argument|usage: luuna-missions search/);
 	});
 
 	test("plain output prints match count", async () => {
@@ -189,7 +189,7 @@ describe("sd search", () => {
 	});
 });
 
-describe("sd search plan annotation parity (seeds-350d)", () => {
+describe("luuna-missions search plan annotation parity (missions-350d)", () => {
 	async function attachPlan(seedId: string, status = "approved"): Promise<void> {
 		const now = new Date().toISOString();
 		const planRow = {
@@ -203,13 +203,13 @@ describe("sd search plan annotation parity (seeds-350d)", () => {
 			createdAt: now,
 			updatedAt: now,
 		};
-		const planPath = join(tmpDir, ".seeds", "plans.jsonl");
+		const planPath = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const existing = (await Bun.file(planPath).exists()) ? await Bun.file(planPath).text() : "";
 		await Bun.write(
 			planPath,
 			`${existing.trim() ? `${existing.trimEnd()}\n` : ""}${JSON.stringify(planRow)}\n`,
 		);
-		const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+		const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 		const text = await Bun.file(issuesPath).text();
 		const lines = text.split("\n").filter((l) => l.trim());
 		const updated = lines.map((l) => {
@@ -220,7 +220,7 @@ describe("sd search plan annotation parity (seeds-350d)", () => {
 		await Bun.write(issuesPath, `${updated.join("\n")}\n`);
 	}
 
-	test("plain format renders plan suffix for planned seeds", async () => {
+	test("plain format renders plan suffix for planned missions", async () => {
 		const id = await create("planned retry", {}, tmpDir);
 		await attachPlan(id);
 		const { stdout, exitCode } = await run(["search", "retry", "--format", "plain"], tmpDir);
@@ -229,7 +229,7 @@ describe("sd search plan annotation parity (seeds-350d)", () => {
 		expect(stdout).toContain("[plan approved]");
 	});
 
-	test("default format renders plan suffix for planned seeds", async () => {
+	test("default format renders plan suffix for planned missions", async () => {
 		const id = await create("planned retry", {}, tmpDir);
 		await attachPlan(id);
 		const { stdout, exitCode } = await run(["search", "retry"], tmpDir);
@@ -245,7 +245,7 @@ describe("sd search plan annotation parity (seeds-350d)", () => {
 	});
 });
 
-describe("sd search --status / --type validation", () => {
+describe("luuna-missions search --status / --type validation", () => {
 	test("rejects invalid --status value (human)", async () => {
 		const { exitCode, stderr } = await run(["search", "foo", "--status", "bogus"], tmpDir);
 		expect(exitCode).not.toBe(0);

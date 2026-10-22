@@ -21,7 +21,7 @@ async function show(id: string, cwd: string): Promise<Issue> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-links-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-links-test-"));
 	await runCli(["init"], tmpDir);
 });
 
@@ -29,7 +29,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd create --from", () => {
+describe("luuna-missions create --from", () => {
 	test("records discoveredFrom and shows it", async () => {
 		const parent = await create(["--title", "parent"], tmpDir);
 		const child = await create(["--title", "found it", "--from", parent], tmpDir);
@@ -64,7 +64,7 @@ describe("--intent", () => {
 		const id = await create(["--title", "x", "--intent", "r-a1b2"], tmpDir);
 		expect((await show(id, tmpDir)).intent).toBe("r-a1b2");
 		// roots reads the raw JSONL, so assert the on-disk shape too.
-		const raw = await readFile(join(tmpDir, ".seeds", "issues.jsonl"), "utf8");
+		const raw = await readFile(join(tmpDir, ".luuna/missions", "issues.jsonl"), "utf8");
 		expect(raw).toContain('"intent":"r-a1b2"');
 	});
 
@@ -79,7 +79,7 @@ describe("--intent", () => {
 	});
 
 	test("rejects ids that are not r-xxxx shaped", async () => {
-		for (const bad of ["a1b2", "r-xyz1", "r-12", "seeds-a1b2"]) {
+		for (const bad of ["a1b2", "r-xyz1", "r-12", "missions-a1b2"]) {
 			const res = await runCli(["create", "--title", "x", "--intent", bad], tmpDir);
 			expect(res.exitCode).not.toBe(0);
 			expect(res.stderr).toContain("Invalid --intent value");

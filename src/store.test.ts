@@ -34,12 +34,12 @@ function makeIssue(overrides: Partial<Issue> = {}): Issue {
 }
 
 let tmpDir: string;
-let seedsDir: string;
+let missionsDir: string;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-store-test-"));
-	seedsDir = join(tmpDir, ".seeds");
-	await Bun.write(join(seedsDir, ".gitignore"), "*.lock\n");
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-store-test-"));
+	missionsDir = join(tmpDir, ".luuna/missions");
+	await Bun.write(join(missionsDir, ".gitignore"), "*.lock\n");
 });
 
 afterEach(async () => {
@@ -48,20 +48,20 @@ afterEach(async () => {
 
 describe("readIssues", () => {
 	test("returns empty array when issues.jsonl does not exist", async () => {
-		const issues = await readIssues(seedsDir);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toEqual([]);
 	});
 
 	test("returns empty array for empty file", async () => {
-		await Bun.write(join(seedsDir, "issues.jsonl"), "");
-		const issues = await readIssues(seedsDir);
+		await Bun.write(join(missionsDir, "issues.jsonl"), "");
+		const issues = await readIssues(missionsDir);
 		expect(issues).toEqual([]);
 	});
 
 	test("reads single issue", async () => {
 		const issue = makeIssue();
-		await Bun.write(join(seedsDir, "issues.jsonl"), `${JSON.stringify(issue)}\n`);
-		const issues = await readIssues(seedsDir);
+		await Bun.write(join(missionsDir, "issues.jsonl"), `${JSON.stringify(issue)}\n`);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(1);
 		expect(issues[0]).toEqual(issue);
 	});
@@ -70,8 +70,8 @@ describe("readIssues", () => {
 		const issue1 = makeIssue({ id: "test-a1b2", title: "First" });
 		const issue2 = makeIssue({ id: "test-c3d4", title: "Second" });
 		const content = [JSON.stringify(issue1), JSON.stringify(issue2), ""].join("\n");
-		await Bun.write(join(seedsDir, "issues.jsonl"), content);
-		const issues = await readIssues(seedsDir);
+		await Bun.write(join(missionsDir, "issues.jsonl"), content);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(2);
 		expect(issues[0]?.id).toBe("test-a1b2");
 		expect(issues[1]?.id).toBe("test-c3d4");
@@ -81,8 +81,8 @@ describe("readIssues", () => {
 		const original = makeIssue({ id: "test-a1b2", title: "Original" });
 		const updated = makeIssue({ id: "test-a1b2", title: "Updated" });
 		const content = [JSON.stringify(original), JSON.stringify(updated), ""].join("\n");
-		await Bun.write(join(seedsDir, "issues.jsonl"), content);
-		const issues = await readIssues(seedsDir);
+		await Bun.write(join(missionsDir, "issues.jsonl"), content);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(1);
 		expect(issues[0]?.title).toBe("Updated");
 	});
@@ -90,8 +90,8 @@ describe("readIssues", () => {
 	test("skips blank lines", async () => {
 		const issue = makeIssue();
 		const content = `\n${JSON.stringify(issue)}\n\n`;
-		await Bun.write(join(seedsDir, "issues.jsonl"), content);
-		const issues = await readIssues(seedsDir);
+		await Bun.write(join(missionsDir, "issues.jsonl"), content);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(1);
 	});
 
@@ -111,8 +111,8 @@ describe("readIssues", () => {
 				notes: null,
 			},
 		});
-		await appendIssue(seedsDir, issue);
-		const issues = await readIssues(seedsDir);
+		await appendIssue(missionsDir, issue);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(1);
 		expect(issues[0]).toEqual(issue);
 		expect(issues[0]?.extensions).toEqual(issue.extensions);
@@ -122,8 +122,8 @@ describe("readIssues", () => {
 describe("appendIssue", () => {
 	test("creates issues.jsonl if it does not exist", async () => {
 		const issue = makeIssue();
-		await appendIssue(seedsDir, issue);
-		const issues = await readIssues(seedsDir);
+		await appendIssue(missionsDir, issue);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(1);
 		expect(issues[0]).toEqual(issue);
 	});
@@ -131,16 +131,16 @@ describe("appendIssue", () => {
 	test("appends to existing file", async () => {
 		const issue1 = makeIssue({ id: "test-a1b2" });
 		const issue2 = makeIssue({ id: "test-c3d4" });
-		await appendIssue(seedsDir, issue1);
-		await appendIssue(seedsDir, issue2);
-		const issues = await readIssues(seedsDir);
+		await appendIssue(missionsDir, issue1);
+		await appendIssue(missionsDir, issue2);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(2);
 	});
 
 	test("each appended issue is on its own line", async () => {
 		const issue = makeIssue();
-		await appendIssue(seedsDir, issue);
-		const content = await Bun.file(join(seedsDir, "issues.jsonl")).text();
+		await appendIssue(missionsDir, issue);
+		const content = await Bun.file(join(missionsDir, "issues.jsonl")).text();
 		const lines = content.split("\n").filter((l) => l.trim() !== "");
 		expect(lines).toHaveLength(1);
 		expect(JSON.parse(lines[0] ?? "{}")).toEqual(issue);
@@ -151,18 +151,18 @@ describe("appendIssue", () => {
 		// trailing newline. The next appendIssue() must NOT concatenate the new
 		// record onto the previous line.
 		const issue1 = makeIssue({ id: "test-a1b2" });
-		await Bun.write(join(seedsDir, "issues.jsonl"), JSON.stringify(issue1));
+		await Bun.write(join(missionsDir, "issues.jsonl"), JSON.stringify(issue1));
 		const issue2 = makeIssue({ id: "test-c3d4" });
-		await appendIssue(seedsDir, issue2);
+		await appendIssue(missionsDir, issue2);
 
-		const content = await Bun.file(join(seedsDir, "issues.jsonl")).text();
+		const content = await Bun.file(join(missionsDir, "issues.jsonl")).text();
 		const lines = content.split("\n").filter((l) => l.trim() !== "");
 		expect(lines).toHaveLength(2);
 		expect(content.endsWith("\n")).toBe(true);
 		for (const line of lines) {
 			expect(() => JSON.parse(line)).not.toThrow();
 		}
-		const issues = await readIssues(seedsDir);
+		const issues = await readIssues(missionsDir);
 		expect(issues.map((i) => i.id).sort()).toEqual(["test-a1b2", "test-c3d4"]);
 	});
 });
@@ -179,18 +179,18 @@ function makeTemplate(overrides: Partial<Template> = {}): Template {
 describe("appendTemplate", () => {
 	test("appends a newline before the new record when existing file lacks one", async () => {
 		const t1 = makeTemplate({ id: "tpl-aaaa" });
-		await Bun.write(templatesPath(seedsDir), JSON.stringify(t1));
+		await Bun.write(templatesPath(missionsDir), JSON.stringify(t1));
 		const t2 = makeTemplate({ id: "tpl-bbbb" });
-		await appendTemplate(seedsDir, t2);
+		await appendTemplate(missionsDir, t2);
 
-		const content = await Bun.file(templatesPath(seedsDir)).text();
+		const content = await Bun.file(templatesPath(missionsDir)).text();
 		const lines = content.split("\n").filter((l) => l.trim() !== "");
 		expect(lines).toHaveLength(2);
 		expect(content.endsWith("\n")).toBe(true);
 		for (const line of lines) {
 			expect(() => JSON.parse(line)).not.toThrow();
 		}
-		const templates = await readTemplates(seedsDir);
+		const templates = await readTemplates(missionsDir);
 		expect(templates.map((t) => t.id).sort()).toEqual(["tpl-aaaa", "tpl-bbbb"]);
 	});
 });
@@ -198,31 +198,31 @@ describe("appendTemplate", () => {
 describe("writeIssues", () => {
 	test("writes issues atomically (overwrites file)", async () => {
 		const original = makeIssue({ id: "test-a1b2", title: "Original" });
-		await appendIssue(seedsDir, original);
+		await appendIssue(missionsDir, original);
 
 		const updated = makeIssue({ id: "test-a1b2", title: "Updated" });
-		await writeIssues(seedsDir, [updated]);
+		await writeIssues(missionsDir, [updated]);
 
-		const issues = await readIssues(seedsDir);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(1);
 		expect(issues[0]?.title).toBe("Updated");
 	});
 
 	test("writes empty array as empty file", async () => {
 		const issue = makeIssue();
-		await appendIssue(seedsDir, issue);
-		await writeIssues(seedsDir, []);
-		const issues = await readIssues(seedsDir);
+		await appendIssue(missionsDir, issue);
+		await writeIssues(missionsDir, []);
+		const issues = await readIssues(missionsDir);
 		expect(issues).toHaveLength(0);
 		// Byte-exact: empty list rewrite produces '' on disk, not '\n'.
-		const content = await Bun.file(join(seedsDir, "issues.jsonl")).text();
+		const content = await Bun.file(join(missionsDir, "issues.jsonl")).text();
 		expect(content).toBe("");
 	});
 
 	test("each issue serialized to its own line", async () => {
 		const issues = [makeIssue({ id: "test-a1b2" }), makeIssue({ id: "test-c3d4" })];
-		await writeIssues(seedsDir, issues);
-		const content = await Bun.file(join(seedsDir, "issues.jsonl")).text();
+		await writeIssues(missionsDir, issues);
+		const content = await Bun.file(join(missionsDir, "issues.jsonl")).text();
 		const lines = content.split("\n").filter((l) => l.trim() !== "");
 		expect(lines).toHaveLength(2);
 	});
@@ -246,14 +246,14 @@ function makePlan(overrides: Partial<Plan> = {}): Plan {
 
 describe("readPlans", () => {
 	test("returns empty array when plans.jsonl does not exist", async () => {
-		const plans = await readPlans(seedsDir);
+		const plans = await readPlans(missionsDir);
 		expect(plans).toEqual([]);
 	});
 
 	test("reads single plan", async () => {
 		const plan = makePlan();
-		await Bun.write(plansPath(seedsDir), `${JSON.stringify(plan)}\n`);
-		const plans = await readPlans(seedsDir);
+		await Bun.write(plansPath(missionsDir), `${JSON.stringify(plan)}\n`);
+		const plans = await readPlans(missionsDir);
 		expect(plans).toHaveLength(1);
 		expect(plans[0]).toEqual(plan);
 	});
@@ -262,8 +262,8 @@ describe("readPlans", () => {
 		const original = makePlan({ id: "pl-a1b2", revision: 1 });
 		const updated = makePlan({ id: "pl-a1b2", revision: 2 });
 		const content = [JSON.stringify(original), JSON.stringify(updated), ""].join("\n");
-		await Bun.write(plansPath(seedsDir), content);
-		const plans = await readPlans(seedsDir);
+		await Bun.write(plansPath(missionsDir), content);
+		const plans = await readPlans(missionsDir);
 		expect(plans).toHaveLength(1);
 		expect(plans[0]?.revision).toBe(2);
 	});
@@ -272,27 +272,27 @@ describe("readPlans", () => {
 describe("appendPlan", () => {
 	test("creates plans.jsonl when missing", async () => {
 		const plan = makePlan();
-		await appendPlan(seedsDir, plan);
-		const plans = await readPlans(seedsDir);
+		await appendPlan(missionsDir, plan);
+		const plans = await readPlans(missionsDir);
 		expect(plans).toEqual([plan]);
 	});
 
 	test("concurrent appends under withLock all land", async () => {
 		await Promise.all(
 			Array.from({ length: 8 }, (_, i) =>
-				withLock(plansPath(seedsDir), () =>
-					appendPlan(seedsDir, makePlan({ id: `pl-${i.toString(16).padStart(4, "0")}` })),
+				withLock(plansPath(missionsDir), () =>
+					appendPlan(missionsDir, makePlan({ id: `pl-${i.toString(16).padStart(4, "0")}` })),
 				),
 			),
 		);
-		const plans = await readPlans(seedsDir);
+		const plans = await readPlans(missionsDir);
 		expect(plans).toHaveLength(8);
 	});
 
 	test("each appended plan is on its own line (no partial lines)", async () => {
-		await appendPlan(seedsDir, makePlan({ id: "pl-aaaa" }));
-		await appendPlan(seedsDir, makePlan({ id: "pl-bbbb" }));
-		const content = await Bun.file(plansPath(seedsDir)).text();
+		await appendPlan(missionsDir, makePlan({ id: "pl-aaaa" }));
+		await appendPlan(missionsDir, makePlan({ id: "pl-bbbb" }));
+		const content = await Bun.file(plansPath(missionsDir)).text();
 		const lines = content.split("\n").filter((l) => l.trim() !== "");
 		expect(lines).toHaveLength(2);
 		for (const line of lines) {
@@ -302,18 +302,18 @@ describe("appendPlan", () => {
 
 	test("appends a newline before the new record when existing file lacks one", async () => {
 		const p1 = makePlan({ id: "pl-aaaa" });
-		await Bun.write(plansPath(seedsDir), JSON.stringify(p1));
+		await Bun.write(plansPath(missionsDir), JSON.stringify(p1));
 		const p2 = makePlan({ id: "pl-bbbb" });
-		await appendPlan(seedsDir, p2);
+		await appendPlan(missionsDir, p2);
 
-		const content = await Bun.file(plansPath(seedsDir)).text();
+		const content = await Bun.file(plansPath(missionsDir)).text();
 		const lines = content.split("\n").filter((l) => l.trim() !== "");
 		expect(lines).toHaveLength(2);
 		expect(content.endsWith("\n")).toBe(true);
 		for (const line of lines) {
 			expect(() => JSON.parse(line)).not.toThrow();
 		}
-		const plans = await readPlans(seedsDir);
+		const plans = await readPlans(missionsDir);
 		expect(plans.map((p) => p.id).sort()).toEqual(["pl-aaaa", "pl-bbbb"]);
 	});
 });
@@ -322,18 +322,18 @@ describe("writePlans", () => {
 	test("round-trip: write then read returns the same plans", async () => {
 		const a = makePlan({ id: "pl-1111", template: "feature", revision: 3 });
 		const b = makePlan({ id: "pl-2222", status: "approved", children: ["test-c001"] });
-		await writePlans(seedsDir, [a, b]);
-		const plans = await readPlans(seedsDir);
+		await writePlans(missionsDir, [a, b]);
+		const plans = await readPlans(missionsDir);
 		expect(plans).toEqual([a, b]);
 	});
 
 	test("atomic rewrite leaves no partial line on disk", async () => {
 		// Seed with one plan, then overwrite with two — confirm content is exactly the new set
-		await appendPlan(seedsDir, makePlan({ id: "pl-1111" }));
+		await appendPlan(missionsDir, makePlan({ id: "pl-1111" }));
 		const a = makePlan({ id: "pl-aaaa" });
 		const b = makePlan({ id: "pl-bbbb" });
-		await writePlans(seedsDir, [a, b]);
-		const content = await Bun.file(plansPath(seedsDir)).text();
+		await writePlans(missionsDir, [a, b]);
+		const content = await Bun.file(plansPath(missionsDir)).text();
 		const lines = content.split("\n").filter((l) => l.trim() !== "");
 		expect(lines).toHaveLength(2);
 		expect(JSON.parse(lines[0] ?? "{}").id).toBe("pl-aaaa");
@@ -341,31 +341,31 @@ describe("writePlans", () => {
 	});
 
 	test("writes empty array as empty file", async () => {
-		await appendPlan(seedsDir, makePlan());
-		await writePlans(seedsDir, []);
-		const plans = await readPlans(seedsDir);
+		await appendPlan(missionsDir, makePlan());
+		await writePlans(missionsDir, []);
+		const plans = await readPlans(missionsDir);
 		expect(plans).toEqual([]);
 		// Byte-exact: empty list rewrite produces '' on disk, not '\n'.
-		const content = await Bun.file(plansPath(seedsDir)).text();
+		const content = await Bun.file(plansPath(missionsDir)).text();
 		expect(content).toBe("");
 	});
 });
 
 describe("writeTemplates", () => {
 	test("writes empty array as empty file", async () => {
-		await appendTemplate(seedsDir, makeTemplate());
-		await writeTemplates(seedsDir, []);
-		const templates = await readTemplates(seedsDir);
+		await appendTemplate(missionsDir, makeTemplate());
+		await writeTemplates(missionsDir, []);
+		const templates = await readTemplates(missionsDir);
 		expect(templates).toEqual([]);
 		// Byte-exact: empty list rewrite produces '' on disk, not '\n'.
-		const content = await Bun.file(templatesPath(seedsDir)).text();
+		const content = await Bun.file(templatesPath(missionsDir)).text();
 		expect(content).toBe("");
 	});
 });
 
 describe("withLock", () => {
 	test("executes function and returns result", async () => {
-		const result = await withLock(seedsDir, async () => 42);
+		const result = await withLock(missionsDir, async () => 42);
 		expect(result).toBe(42);
 	});
 
@@ -374,7 +374,7 @@ describe("withLock", () => {
 		let counter = 0;
 		await Promise.all(
 			Array.from({ length: 5 }, () =>
-				withLock(seedsDir, async () => {
+				withLock(missionsDir, async () => {
 					counter++;
 				}),
 			),
@@ -384,30 +384,30 @@ describe("withLock", () => {
 
 	test("releases lock even if function throws", async () => {
 		await expect(
-			withLock(seedsDir, async () => {
+			withLock(missionsDir, async () => {
 				throw new Error("intentional error");
 			}),
 		).rejects.toThrow("intentional error");
 
 		// Lock should be released — another withLock should succeed
-		const result = await withLock(seedsDir, async () => "ok");
+		const result = await withLock(missionsDir, async () => "ok");
 		expect(result).toBe("ok");
 	});
 
 	test("reclaims a stale lock without leaving sidecar files", async () => {
 		// Plant a stale lock file (mtime far in the past, well beyond LOCK_STALE_MS).
-		const lockPath = `${seedsDir}.lock`;
+		const lockPath = `${missionsDir}.lock`;
 		closeSync(openSync(lockPath, "w"));
 		const past = new Date(Date.now() - 10 * 60_000);
 		utimesSync(lockPath, past, past);
 
-		const result = await withLock(seedsDir, async () => "claimed");
+		const result = await withLock(missionsDir, async () => "claimed");
 		expect(result).toBe("claimed");
 
 		// No .lock and no `.lock.stale.*` sidecars should remain after release.
 		const entries = readdirSync(tmpDir);
 		const leftover = entries.filter(
-			(name) => name.startsWith(".seeds.lock") || name === ".seeds.lock",
+			(name) => name.startsWith(".luuna/missions.lock") || name === ".luuna/missions.lock",
 		);
 		expect(leftover).toEqual([]);
 	});
@@ -425,7 +425,7 @@ describe("withLock", () => {
 		// critical section is still mutually exclusive and no sidecar files
 		// leak. Under the old code with deliberate contention this assertion
 		// would not hold; under the rename-based atomic claim, it does.
-		const lockPath = `${seedsDir}.lock`;
+		const lockPath = `${missionsDir}.lock`;
 		closeSync(openSync(lockPath, "w"));
 		const past = new Date(Date.now() - 10 * 60_000);
 		utimesSync(lockPath, past, past);
@@ -435,7 +435,7 @@ describe("withLock", () => {
 		let completed = 0;
 		await Promise.all(
 			Array.from({ length: 5 }, () =>
-				withLock(seedsDir, async () => {
+				withLock(missionsDir, async () => {
 					inside++;
 					maxInside = Math.max(maxInside, inside);
 					// Yield to the event loop so any concurrency violation has a

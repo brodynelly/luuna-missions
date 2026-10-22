@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { enrichPriorArt, type PriorArtEntry, typesForSection } from "./plan-mulch.ts";
+import { enrichPriorArt, type PriorArtEntry, typesForSection } from "./plan-atlas.ts";
 import { pathWith, writeFakeBin } from "./test-fake-bin.ts";
 
 let tmpDir: string;
@@ -10,7 +10,7 @@ let binDir: string;
 let originalPath: string | undefined;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-plan-mulch-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-plan-atlas-"));
 	binDir = join(tmpDir, "bin");
 	await mkdir(binDir, { recursive: true });
 	originalPath = process.env.PATH;
@@ -23,9 +23,9 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-// Stage canned ml-query responses keyed by `<domain>/<type>`. The fake script
+// Stage canned luuna-atlas-query responses keyed by `<domain>/<type>`. The fake script
 // reads its own argv and emits the matching JSON, lets the test assert the
-// shape of every shell-out without depending on a real mulch install.
+// shape of every shell-out without depending on a real luuna-atlas install.
 async function writeFakeMl(opts: {
 	responses: Record<string, { json?: unknown; exit?: number }>;
 }): Promise<void> {
@@ -51,7 +51,7 @@ if (r.exit && r.exit !== 0) {
 }
 process.stdout.write(JSON.stringify(r.json ?? {}));
 `;
-	await writeFakeBin(binDir, "ml", body);
+	await writeFakeBin(binDir, "luuna-atlas", body);
 }
 
 function makeRecord(
@@ -93,7 +93,7 @@ describe("typesForSection", () => {
 });
 
 describe("enrichPriorArt", () => {
-	test("populates prior_art across sections with ml stub on PATH", async () => {
+	test("populates prior_art across sections with luuna-atlas stub on PATH", async () => {
 		await writeFakeMl({
 			responses: {
 				"commands/pattern": {
@@ -134,7 +134,7 @@ describe("enrichPriorArt", () => {
 				{ name: "approach" },
 				{ name: "risks" },
 				{ name: "acceptance" },
-				{ name: "extras", mulchSource: "convention" }, // explicit hint
+				{ name: "extras", atlasSource: "convention" }, // explicit hint
 			],
 			cwd: tmpDir,
 		});
@@ -189,7 +189,7 @@ describe("enrichPriorArt", () => {
 		expect(entry?.relevance).toBeGreaterThan(0);
 	});
 
-	test("ml absent -> all sections empty, no throw", () => {
+	test("luuna-atlas absent -> all sections empty, no throw", () => {
 		// Override PATH so even the fake bin isn't found.
 		const saved = process.env.PATH;
 		process.env.PATH = "/nonexistent-bin-only";
@@ -207,7 +207,7 @@ describe("enrichPriorArt", () => {
 		}
 	});
 
-	test("non-zero ml query exit for one section -> that section empty, others populated", async () => {
+	test("non-zero luuna-atlas query exit for one section -> that section empty, others populated", async () => {
 		await writeFakeMl({
 			responses: {
 				"commands/pattern": { exit: 1 },
@@ -231,7 +231,7 @@ describe("enrichPriorArt", () => {
 	});
 
 	test("null domain -> empty arrays for every section, no shell-out", () => {
-		// No fake ml needed: should not be invoked when domain is null.
+		// No fake luuna-atlas needed: should not be invoked when domain is null.
 		const result = enrichPriorArt({
 			domain: null,
 			sections: [{ name: "approach" }, { name: "risks" }, { name: "acceptance" }],
@@ -242,7 +242,7 @@ describe("enrichPriorArt", () => {
 		expect(result.acceptance ?? []).toEqual([]);
 	});
 
-	test("malformed ml output -> section silently skipped", async () => {
+	test("malformed luuna-atlas output -> section silently skipped", async () => {
 		await writeFakeMl({
 			responses: {
 				"commands/failure": { json: "not an object" },

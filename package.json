@@ -6,8 +6,7 @@
   "bin": {
     "luuna-missions": "src/index.ts",
     "lm": "src/index.ts",
-    "sd": "src/index.ts",
-    "seeds": "src/index.ts"
+    "missions": "src/index.ts"
   },
   "main": "src/index.ts",
   "files": [

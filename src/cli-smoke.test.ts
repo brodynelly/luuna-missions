@@ -1,4 +1,4 @@
-// Subprocess-level smoke tests for the seeds CLI entrypoint.
+// Subprocess-level smoke tests for the missions CLI entrypoint.
 //
 // Every other command test runs in-process via src/test-harness.ts (~25x
 // faster). This file intentionally spawns `bun run src/index.ts` to cover the
@@ -44,7 +44,7 @@ async function run(args: string[], cwd?: string): Promise<SpawnResult> {
 	return { stdout, stderr, exitCode };
 }
 
-describe("sd CLI smoke", () => {
+describe("luuna-missions CLI smoke", () => {
 	test("--version prints the package version", async () => {
 		const { stdout, exitCode } = await run(["--version"]);
 		expect(exitCode).toBe(0);
@@ -92,7 +92,7 @@ describe("sd CLI smoke", () => {
 		expect(stdout).toContain("--timing");
 	});
 
-	test("sd create --help hides the --label alias", async () => {
+	test("luuna-missions create --help hides the --label alias", async () => {
 		const { stdout, exitCode } = await run(["create", "--help"]);
 		expect(exitCode).toBe(0);
 		// Canonical flag is documented.
@@ -109,12 +109,12 @@ describe("sd CLI smoke", () => {
 	});
 
 	test("unknown command with --json wraps the error on stdout", async () => {
-		// `sd show <missing>` blows up inside the command, exercising the
+		// `luuna-missions show <missing>` blows up inside the command, exercising the
 		// main().catch JSON branch in src/index.ts.
-		const cwd = await mkdtemp(join(tmpdir(), "seeds-smoke-"));
+		const cwd = await mkdtemp(join(tmpdir(), "missions-smoke-"));
 		try {
 			await run(["init"], cwd);
-			const { stdout, exitCode } = await run(["show", "seeds-deadbeef", "--json"], cwd);
+			const { stdout, exitCode } = await run(["show", "missions-deadbeef", "--json"], cwd);
 			expect(exitCode).toBe(1);
 			const parsed = JSON.parse(stdout) as {
 				success: boolean;
@@ -130,7 +130,7 @@ describe("sd CLI smoke", () => {
 	});
 
 	test("end-to-end init → create → list works through the real binary", async () => {
-		const cwd = await mkdtemp(join(tmpdir(), "seeds-smoke-"));
+		const cwd = await mkdtemp(join(tmpdir(), "missions-smoke-"));
 		try {
 			const init = await run(["init"], cwd);
 			expect(init.exitCode).toBe(0);
@@ -158,21 +158,21 @@ describe("sd CLI smoke", () => {
 		}
 	});
 
-	test("large --json output to an early-closing reader exits promptly (EPIPE, seeds-3024)", async () => {
-		const cwd = await mkdtemp(join(tmpdir(), "seeds-epipe-"));
+	test("large --json output to an early-closing reader exits promptly (EPIPE, missions-3024)", async () => {
+		const cwd = await mkdtemp(join(tmpdir(), "missions-epipe-"));
 		try {
 			const init = await run(["init"], cwd);
 			expect(init.exitCode).toBe(0);
 
 			// Inflate the store so `list --json` far exceeds the OS pipe buffer
-			// (~64KB), guaranteeing sd still has data buffered when `head` closes
+			// (~64KB), guaranteeing luuna-missions still has data buffered when `head` closes
 			// the read end.
-			const dbPath = join(cwd, ".seeds", "issues.jsonl");
+			const dbPath = join(cwd, ".luuna/missions", "issues.jsonl");
 			const lines: string[] = [];
 			for (let i = 0; i < 500; i++) {
 				lines.push(
 					JSON.stringify({
-						id: `seeds-${i.toString(16).padStart(4, "0")}`,
+						id: `missions-${i.toString(16).padStart(4, "0")}`,
 						title: "x".repeat(400),
 						status: "open",
 						type: "task",
@@ -187,9 +187,9 @@ describe("sd CLI smoke", () => {
 			// Faithful reproduction of the incident: pipe a large `--json` payload
 			// into a reader (`head`) that drains a little and exits, closing the
 			// pipe early. Before the EPIPE fix this hung forever (busy-spin on
-			// Linux). sd's own stderr is captured so we can assert it exited
+			// Linux). luuna-missions's own stderr is captured so we can assert it exited
 			// cleanly rather than crashing with an EPIPE stack.
-			const errPath = join(cwd, "sd-stderr.log");
+			const errPath = join(cwd, "luuna-missions-stderr.log");
 			const proc = Bun.spawn(
 				[
 					"bash",
@@ -205,7 +205,7 @@ describe("sd CLI smoke", () => {
 			const result = await Promise.race([proc.exited, timeout]);
 			if (result === "timeout") {
 				proc.kill(9);
-				throw new Error("sd hung on a broken pipe (EPIPE) instead of exiting");
+				throw new Error("luuna-missions hung on a broken pipe (EPIPE) instead of exiting");
 			}
 
 			const errLog = await Bun.file(errPath)
@@ -217,23 +217,23 @@ describe("sd CLI smoke", () => {
 		}
 	}, 15_000);
 
-	test("large --json output to a fully-draining reader exits promptly (backpressure, seeds-18dc)", async () => {
-		const cwd = await mkdtemp(join(tmpdir(), "seeds-drain-"));
+	test("large --json output to a fully-draining reader exits promptly (backpressure, missions-18dc)", async () => {
+		const cwd = await mkdtemp(join(tmpdir(), "missions-drain-"));
 		try {
 			const init = await run(["init"], cwd);
 			expect(init.exitCode).toBe(0);
 
 			// Inflate the store so `list --json` far exceeds the OS pipe buffer
-			// (~64KB). seeds-3024 only covered an early-closing reader (`| head`);
+			// (~64KB). missions-3024 only covered an early-closing reader (`| head`);
 			// this covers a reader that stays OPEN and fully drains. The one-shot
 			// Bun.write busy-spun at 100% CPU on Linux here (no EPIPE, reader open)
 			// until backpressure-aware chunked writes landed.
-			const dbPath = join(cwd, ".seeds", "issues.jsonl");
+			const dbPath = join(cwd, ".luuna/missions", "issues.jsonl");
 			const lines: string[] = [];
 			for (let i = 0; i < 1000; i++) {
 				lines.push(
 					JSON.stringify({
-						id: `seeds-${i.toString(16).padStart(4, "0")}`,
+						id: `missions-${i.toString(16).padStart(4, "0")}`,
 						title: "x".repeat(400),
 						status: "open",
 						type: "task",
@@ -260,7 +260,9 @@ describe("sd CLI smoke", () => {
 			const result = await Promise.race([proc.exited, timeout]);
 			if (result === "timeout") {
 				proc.kill(9);
-				throw new Error("sd busy-spun on a full pipe (backpressure) instead of exiting");
+				throw new Error(
+					"luuna-missions busy-spun on a full pipe (backpressure) instead of exiting",
+				);
 			}
 			expect(result).toBe(0);
 

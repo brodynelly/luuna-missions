@@ -1,8 +1,8 @@
-// sd guard: Claude Code PreToolUse hook handler (installed by `sd setup claude`).
+// luuna-missions guard: Claude Code PreToolUse hook handler (installed by `luuna-missions setup claude`).
 //
 // Reads the hook JSON ({tool_name, tool_input, cwd}) on stdin and denies
-// Write/Edit/MultiEdit/NotebookEdit on `.seeds/*.jsonl`: hand edits skip the
-// lock, validation, and dedup that `sd` commands do. A denial prints
+// Write/Edit/MultiEdit/NotebookEdit on `.luuna/missions/*.jsonl`: hand edits skip the
+// lock, validation, and dedup that `luuna-missions` commands do. A denial prints
 //   {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny",
 //    "permissionDecisionReason":"..."}}
 // and exits 0; an allow prints nothing (normal permission flow continues).
@@ -20,9 +20,10 @@ const FILE_KEYS: Record<string, string> = {
 };
 
 const USE_INSTEAD: Record<string, string> = {
-	"issues.jsonl": "sd create / sd update / sd close / sd dep / sd label",
-	"plans.jsonl": "sd plan (submit / edit / adopt / reorder)",
-	"templates.jsonl": "sd tpl",
+	"issues.jsonl":
+		"luuna-missions create / luuna-missions update / luuna-missions close / luuna-missions dep / luuna-missions label",
+	"plans.jsonl": "luuna-missions plan (submit / edit / adopt / reorder)",
+	"templates.jsonl": "luuna-missions tpl",
 };
 
 function field(obj: unknown, key: string): unknown {
@@ -41,9 +42,15 @@ export function guardDecision(input: unknown, fallbackCwd: string): string | nul
 	const cwd = field(input, "cwd");
 	const abs = resolve(typeof cwd === "string" && cwd !== "" ? cwd : fallbackCwd, target);
 	const file = basename(abs);
-	if (basename(dirname(abs)) !== ".seeds" || !file.endsWith(".jsonl")) return null;
-	const cmd = USE_INSTEAD[file] ?? "the sd CLI";
-	return `seeds: do not edit .seeds/${file} by hand; use ${cmd} (sd commands lock, validate, and dedup the store).`;
+	const dir = dirname(abs);
+	if (
+		basename(dir) !== "missions" ||
+		basename(dirname(dir)) !== ".luuna" ||
+		!file.endsWith(".jsonl")
+	)
+		return null;
+	const cmd = USE_INSTEAD[file] ?? "the luuna-missions CLI";
+	return `missions: do not edit .luuna/missions/${file} by hand; use ${cmd} (luuna-missions commands lock, validate, and dedup the store).`;
 }
 
 /** Hook stdout for raw stdin: the deny JSON, or "" to allow. */
@@ -68,7 +75,9 @@ export function guardOutput(raw: string, cwd: string): string {
 export function register(program: Command): void {
 	program
 		.command("guard")
-		.description("PreToolUse hook: deny hand edits to .seeds/*.jsonl (reads hook JSON on stdin)")
+		.description(
+			"PreToolUse hook: deny hand edits to .luuna/missions/*.jsonl (reads hook JSON on stdin)",
+		)
 		.action(async () => {
 			const raw = process.stdin.isTTY ? "" : await readStdin();
 			process.stdout.write(guardOutput(raw, process.cwd()));

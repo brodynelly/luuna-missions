@@ -16,7 +16,7 @@ async function runJson<T>(args: string[], cwd: string): Promise<T> {
 }
 
 const VALID_CONTEXT =
-	"This work matters because we need to enable structured planning for AI agents using seeds.";
+	"This work matters because we need to enable structured planning for AI agents using missions.";
 
 function validPlan() {
 	return {
@@ -51,7 +51,7 @@ async function submitPlan(cwd: string, seedId: string): Promise<string> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-plan-show-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-plan-show-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -59,7 +59,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd plan show", () => {
+describe("luuna-missions plan show", () => {
 	test("--json returns success envelope with plan + children for a pl-id", async () => {
 		const seedId = await createSeed("Plan parent", tmpDir);
 		const planId = await submitPlan(tmpDir, seedId);
@@ -99,7 +99,7 @@ describe("sd plan show", () => {
 		expect(stdout).toMatch(/Children \(\d+\)/);
 	});
 
-	test("human render surfaces type, priority, labels, existing_seed for steps (seeds-5892)", async () => {
+	test("human render surfaces type, priority, labels, existing_seed for steps (missions-5892)", async () => {
 		const seedId = await createSeed("Plan parent", tmpDir);
 		const adopted = await createSeed("Pre-existing seed", tmpDir);
 		const plan = {
@@ -138,7 +138,7 @@ describe("sd plan show", () => {
 		expect(stdout).toContain(`(adopt ${adopted})`);
 	});
 
-	test("--json output preserves step fields (seeds-5892)", async () => {
+	test("--json output preserves step fields (missions-5892)", async () => {
 		const seedId = await createSeed("Plan parent", tmpDir);
 		const planId = await submitPlan(tmpDir, seedId);
 		const out = await runJson<{ plan: { sections: { steps: unknown[] } } }>(
@@ -154,7 +154,7 @@ describe("sd plan show", () => {
 		const { stderr, exitCode } = await run(["plan", "show", "pl-9999"], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain("Plan not found: pl-9999");
-		expect(stderr).toContain("sd plan list");
+		expect(stderr).toContain("luuna-missions plan list");
 	});
 
 	test("seed with no plan_id errors with a submit hint", async () => {
@@ -162,6 +162,6 @@ describe("sd plan show", () => {
 		const { stderr, exitCode } = await run(["plan", "show", seedId], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain("has no plan");
-		expect(stderr).toContain(`sd plan submit ${seedId}`);
+		expect(stderr).toContain(`luuna-missions plan submit ${seedId}`);
 	});
 });

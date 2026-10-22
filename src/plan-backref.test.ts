@@ -12,18 +12,18 @@ describe("buildPlanBackref", () => {
 		const out = buildPlanBackref({
 			stepIndex: 1,
 			planId: "pl-9d0f",
-			parentSeedId: "seeds-7c84",
+			parentSeedId: "missions-7c84",
 			parentSeedTitle: "Add OAuth2 device-flow authentication",
 			templateName: "feature",
-			approach: "Hardcoded TS template + AJV schema, mirroring mulch's custom_types.",
+			approach: "Hardcoded TS template + AJV schema, mirroring luuna-atlas's custom_types.",
 		});
 		expect(out).toContain(BACKREF_START);
 		expect(out).toContain(BACKREF_END);
 		expect(out).toContain("Step 2 of plan pl-9d0f.");
-		expect(out).toContain("Parent seed: seeds-7c84 — Add OAuth2 device-flow authentication");
+		expect(out).toContain("Parent seed: missions-7c84 — Add OAuth2 device-flow authentication");
 		expect(out).toContain("Plan template: feature");
 		expect(out).toContain("Plan approach: Hardcoded TS template + AJV schema");
-		expect(out).toContain("Run `sd plan show pl-9d0f` for the full plan");
+		expect(out).toContain("Run `luuna-missions plan show pl-9d0f` for the full plan");
 	});
 
 	test("step index is 1-based in the rendered text", () => {

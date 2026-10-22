@@ -13,3 +13,13 @@ Maintainer and release owner: brodynelly. Destination: https://github.com/brodyn
 Visibility: public, explicitly authorized by the owner on October 21, 2026. Luuna remains private. No private authoring records or credential files are included in the extracted history.
 
 The owner requested the explicit luuna-* repository names on October 21, 2026. GitHub repository identity, history and CI are preserved by rename; the canonical destination is brodynelly/luuna-missions.
+
+# Layout move to .luuna/missions, October 22, 2026
+
+- Project data directory: `.seeds/` is now `.luuna/missions/`. File names inside (`issues.jsonl`, `plans.jsonl`, `templates.jsonl`, `config.yaml`, `.gitignore`) and the JSONL record format are unchanged.
+- Automatic migration: when a command needs the store (including `init`) and `.luuna/missions/` is absent while `.seeds/` exists at the project root, the directory is renamed and a single notice is written to stderr (stdout stays machine-readable). If both exist the command fails with an error asking you to resolve it by hand. A symlinked `.luuna` or `.seeds` is refused.
+- Managed `.gitattributes` and `.gitignore` lines that named `.seeds/` are rewritten to `.luuna/missions/`. Commit the rename together with those files.
+- Removed bin aliases `sd` and `seeds`; use `luuna-missions` or `lm`. Re-run `luuna-missions setup claude` to refresh hook commands (older `sd prime` / `sd guard` hooks are replaced).
+- Environment variables: `SEEDS_DEBUG` and `SEEDS_LOG_LEVEL` are now `LUUNA_MISSIONS_DEBUG` and `LUUNA_MISSIONS_LOG_LEVEL`. The old names are no longer read.
+- Onboard and plan-backref markers changed from `seeds:*` / `seeds-onboard-*` to `missions:*` / `missions-onboard-*`; existing sections are re-written by `onboard`.
+- Plan-template section key `mulch_source` in `config.yaml` is now `atlas_source`; the old key is still accepted and is rewritten when the config is saved with `luuna-missions config set`. Prior-art enrichment and `--record-decision` call `luuna-atlas` instead of `ml`.

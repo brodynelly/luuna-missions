@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { applyIssueFilters, filterOptionsFromFlags, parseLimitFlag } from "../filter.ts";
 import { resolveFormat, stripAnsi, VALID_FORMATS } from "../format.ts";
 import {
@@ -39,14 +39,14 @@ function isScheduledOut(issue: Issue, now: number): boolean {
 }
 
 /**
- * Open issues whose blockers are all closed (plus seeds whose draft plan needs
- * planning). Unsorted and unfiltered; shared with `sd prime`'s live state.
+ * Open issues whose blockers are all closed (plus missions whose draft plan needs
+ * planning). Unsorted and unfiltered; shared with `luuna-missions prime`'s live state.
  */
 export function readyIssues(issues: Issue[], planCtx: PlanContext): Issue[] {
 	const closedIds = new Set(issues.filter((i) => i.status === "closed").map((i) => i.id));
 	return issues.filter((i) => {
 		if (i.status !== "open") return false;
-		// PLAN_SPEC.md:342 — seeds with requires_plan are excluded until their
+		// PLAN_SPEC.md:342 — missions with requires_plan are excluded until their
 		// own sub-plan reaches `approved`. Lookup by seed-id since plan_id is
 		// not set on the spawned child until its sub-plan submit succeeds.
 		if (i.requires_plan === true) {
@@ -54,7 +54,7 @@ export function readyIssues(issues: Issue[], planCtx: PlanContext): Issue[] {
 			if (!sub || sub.status === "draft") return false;
 			// approved/active/done: fall through to standard blocker check.
 		} else if (isPlanDraftBlocking(planForIssue(planCtx, i))) {
-			// Planning is the highest-priority work: surface seeds with a draft
+			// Planning is the highest-priority work: surface missions with a draft
 			// plan even if they would otherwise be blocked. (PLAN_SPEC.md:154)
 			return true;
 		}
@@ -95,7 +95,7 @@ function parseArgs(args: string[]): Record<string, string | boolean> {
 	return flags;
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const fmt = resolveFormat(args);
 	const jsonMode = fmt.mode === "json";
 	if (fmt.error) {
@@ -133,7 +133,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		return;
 	}
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	const issues = await readIssues(dir);
 	const planCtx = await loadPlanContext(dir);
 

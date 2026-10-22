@@ -165,7 +165,7 @@ describe("generatePlanSchema — feature template (Phase 1 round-trip)", () => {
 		expect(result.diff.errors.some((e) => e.code === "self-reference")).toBe(true);
 	});
 
-	test("rejects blocks: [0] with a 1-based out-of-range error (seeds-185f)", () => {
+	test("rejects blocks: [0] with a 1-based out-of-range error (missions-185f)", () => {
 		const validator = compilePlanTemplate(BUILTIN_FEATURE_TEMPLATE);
 		const result = validator({
 			template: "feature",
@@ -186,7 +186,7 @@ describe("generatePlanSchema — feature template (Phase 1 round-trip)", () => {
 		expect(err?.fix).toContain("1-based");
 	});
 
-	test("accepts step with optional existing_seed (seeds-7002 / pl-43ff)", () => {
+	test("accepts step with optional existing_seed (missions-7002 / pl-43ff)", () => {
 		const validator = compilePlanTemplate(BUILTIN_FEATURE_TEMPLATE);
 		const result = validator({
 			template: "feature",
@@ -194,7 +194,7 @@ describe("generatePlanSchema — feature template (Phase 1 round-trip)", () => {
 				context: "x".repeat(60),
 				approach: "pick",
 				steps: [
-					{ title: "adopt me", existing_seed: "seeds-1234", blocks: [] },
+					{ title: "adopt me", existing_seed: "missions-1234", blocks: [] },
 					{ title: "fresh spawn", blocks: [] },
 				],
 				acceptance: ["ok"],

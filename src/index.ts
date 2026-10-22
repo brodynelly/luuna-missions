@@ -11,7 +11,7 @@ import { VERSION } from "./version.ts";
 export { VERSION };
 
 // Exit cleanly when a downstream reader closes the pipe early (the common
-// `sd ... --json | head` idiom). Node/Bun deliver a broken pipe as an EPIPE
+// `luuna-missions ... --json | head` idiom). Node/Bun deliver a broken pipe as an EPIPE
 // "error" event on the stream rather than a SIGPIPE signal; without a handler
 // the process throws an uncaught error or, on Linux, busy-spins at 100% CPU
 // retrying the write. (The Bun.write stdout path is guarded separately in

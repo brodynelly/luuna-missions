@@ -7,7 +7,7 @@ import { runCli, runCliJson } from "./test-harness.ts";
 let tmpDir: string;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-harness-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-harness-test-"));
 });
 
 afterEach(async () => {
@@ -15,13 +15,13 @@ afterEach(async () => {
 });
 
 describe("runCli basic capture", () => {
-	test("init creates .seeds and reports success on stdout (human mode)", async () => {
+	test("init creates .luuna/missions and reports success on stdout (human mode)", async () => {
 		const r = await runCli(["init"], tmpDir);
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toContain("Initialized");
 		expect(r.stderr).toBe("");
 		// Filesystem side-effect happened in tmpDir, not in the test's cwd.
-		const cfg = await readFile(join(tmpDir, ".seeds", "config.yaml"), "utf8");
+		const cfg = await readFile(join(tmpDir, ".luuna/missions", "config.yaml"), "utf8");
 		expect(cfg).toContain("project:");
 	});
 
@@ -32,7 +32,7 @@ describe("runCli basic capture", () => {
 		);
 		expect(result.success).toBe(true);
 		expect(result.command).toBe("init");
-		expect(result.dir).toContain(".seeds");
+		expect(result.dir).toContain(join(".luuna", "missions"));
 	});
 
 	test("create + list round-trip via runCliJson", async () => {
@@ -84,7 +84,7 @@ describe("runCli error handling", () => {
 		// dep with no subcommand throws.
 		const r = await runCli(["dep"], tmpDir);
 		expect(r.exitCode).toBe(1);
-		expect(r.stderr).toContain("Usage: sd dep");
+		expect(r.stderr).toContain("Usage: luuna-missions dep");
 	});
 
 	test("thrown errors with --json emit JSON envelope on stdout", async () => {
@@ -143,7 +143,7 @@ describe("runCli isolation", () => {
 	});
 
 	test("two sequential calls in different tmpDirs do not leak state", async () => {
-		const other = await mkdtemp(join(tmpdir(), "seeds-harness-iso-"));
+		const other = await mkdtemp(join(tmpdir(), "missions-harness-iso-"));
 		try {
 			await runCli(["init"], tmpDir);
 			await runCli(["init"], other);
@@ -206,7 +206,7 @@ describe("runCli respects writable files (no Bun.write interference)", () => {
 	test("a command that writes JSONL via Bun.write to a file path still persists", async () => {
 		await runCli(["init"], tmpDir);
 		await runCliJson(["create", "--title", "persisted", "--priority", "3"], tmpDir);
-		const jsonl = await readFile(join(tmpDir, ".seeds", "issues.jsonl"), "utf8");
+		const jsonl = await readFile(join(tmpDir, ".luuna/missions", "issues.jsonl"), "utf8");
 		expect(jsonl).toContain("persisted");
 	});
 

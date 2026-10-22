@@ -1,7 +1,7 @@
 // AJV-based plan validation primitives.
 //
 // This is the ONLY module that imports `ajv`, keeping the runtime-dep boundary
-// tight (CLAUDE.md "Dependencies"). All later `sd plan` commands (submit,
+// tight (CLAUDE.md "Dependencies"). All later `luuna-missions plan` commands (submit,
 // validate) consume `compileSchema` and `formatErrors` from here.
 //
 // API choice: `compileSchema` returns a `ValidatorFn` that runs the formatter

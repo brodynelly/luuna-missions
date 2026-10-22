@@ -1,8 +1,8 @@
 import type { Issue } from "./types.ts";
 
-// Soft-coupling helper: infers the mulch domain to query for a given seed.
-// PLAN_SPEC.md:344-352. Returns null when no signal matches or ml is absent —
-// callers must treat null as "skip mulch enrichment", not as an error.
+// Soft-coupling helper: infers the luuna-atlas domain to query for a given seed.
+// PLAN_SPEC.md:344-352. Returns null when no signal matches or luuna-atlas is absent —
+// callers must treat null as "skip luuna-atlas enrichment", not as an error.
 
 export interface InferDomainOptions {
 	seed: Issue;
@@ -26,11 +26,11 @@ export function inferDomain(opts: InferDomainOptions): InferDomainResult {
 
 	// Pass PATH explicitly: Bun.which resolves against a snapshot taken at
 	// process start otherwise, which makes the helper untestable when callers
-	// mutate process.env.PATH (e.g. tests prepending a fake-ml bin/).
-	const ml = Bun.which("ml", { PATH: process.env.PATH });
-	if (!ml) return { domain: null, source: "none" };
+	// mutate process.env.PATH (e.g. tests prepending a fake-luuna-atlas bin/).
+	const atlas = Bun.which("luuna-atlas", { PATH: process.env.PATH });
+	if (!atlas) return { domain: null, source: "none" };
 
-	const domains = listMulchDomains(ml, cwd);
+	const domains = listAtlasDomains(atlas, cwd);
 	if (!domains || domains.length === 0) return { domain: null, source: "none" };
 	const domainSet = new Set(domains);
 
@@ -52,9 +52,9 @@ export function inferDomain(opts: InferDomainOptions): InferDomainResult {
 	return { domain: null, source: "none" };
 }
 
-function listMulchDomains(ml: string, cwd: string): string[] | null {
+function listAtlasDomains(atlas: string, cwd: string): string[] | null {
 	try {
-		const result = Bun.spawnSync([ml, "--json", "status"], {
+		const result = Bun.spawnSync([atlas, "--json", "status"], {
 			cwd,
 			stdout: "pipe",
 			stderr: "pipe",

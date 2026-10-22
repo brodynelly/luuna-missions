@@ -19,7 +19,7 @@ async function runJson<T = unknown>(args: string[], cwd: string): Promise<T> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-create-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-create-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -27,7 +27,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd create", () => {
+describe("luuna-missions create", () => {
 	test("creates an issue with required title", async () => {
 		const result = await runJson<{ success: boolean; id: string }>(
 			["create", "--title", "My first issue"],
@@ -178,7 +178,7 @@ describe("sd create", () => {
 	});
 });
 
-describe("sd create --label alias", () => {
+describe("luuna-missions create --label alias", () => {
 	test("--label produces same labels as --labels", async () => {
 		const withAlias = await runJson<{ success: boolean; id: string }>(
 			["create", "--title", "alias", "--label", "foo,bar"],
@@ -231,7 +231,7 @@ describe("sd create --label alias", () => {
 	});
 });
 
-describe("sd show", () => {
+describe("luuna-missions show", () => {
 	test("returns issue by id", async () => {
 		const create = await runJson<{ success: boolean; id: string }>(
 			["create", "--title", "Show test"],
@@ -256,7 +256,7 @@ describe("sd show", () => {
 	});
 });
 
-describe("sd list", () => {
+describe("luuna-missions list", () => {
 	test("lists all issues by default", async () => {
 		await run(["create", "--title", "Issue 1"], tmpDir);
 		await run(["create", "--title", "Issue 2"], tmpDir);
@@ -323,7 +323,7 @@ describe("sd list", () => {
 	});
 });
 
-describe("sd update", () => {
+describe("luuna-missions update", () => {
 	test("updates status to in_progress", async () => {
 		const create = await runJson<{ success: boolean; id: string }>(
 			["create", "--title", "Issue to update"],
@@ -388,7 +388,7 @@ describe("sd update", () => {
 	});
 });
 
-describe("sd close", () => {
+describe("luuna-missions close", () => {
 	test("closes an issue", async () => {
 		const create = await runJson<{ success: boolean; id: string }>(
 			["create", "--title", "Issue to close"],
@@ -452,7 +452,7 @@ describe("sd close", () => {
 	});
 });
 
-describe("sd ready", () => {
+describe("luuna-missions ready", () => {
 	test("returns open issues with no blockers", async () => {
 		await run(["create", "--title", "Ready issue"], tmpDir);
 		const result = await runJson<{ success: boolean; issues: unknown[] }>(["ready"], tmpDir);
@@ -503,7 +503,7 @@ describe("sd ready", () => {
 	});
 });
 
-describe("sd blocked", () => {
+describe("luuna-missions blocked", () => {
 	test("shows blocked issues", async () => {
 		const c1 = await runJson<{ success: boolean; id: string }>(
 			["create", "--title", "Blocker"],
@@ -530,7 +530,7 @@ describe("sd blocked", () => {
 	});
 });
 
-describe("sd stats", () => {
+describe("luuna-missions stats", () => {
 	test("returns project statistics", async () => {
 		await run(["create", "--title", "Open 1"], tmpDir);
 		const c2 = await runJson<{ success: boolean; id: string }>(

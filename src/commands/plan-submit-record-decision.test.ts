@@ -12,10 +12,10 @@ let invocationLog: string;
 let originalPath: string | undefined;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-record-decision-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-record-decision-"));
 	binDir = join(tmpDir, "bin");
 	await mkdir(binDir, { recursive: true });
-	invocationLog = join(tmpDir, "ml-invocations.log");
+	invocationLog = join(tmpDir, "luuna-atlas-invocations.log");
 	originalPath = process.env.PATH;
 	process.env.PATH = pathWith(binDir);
 	await runSd(["init"], tmpDir);
@@ -35,7 +35,7 @@ async function runSd(
 		cwd,
 		stdout: "pipe",
 		stderr: "pipe",
-		// Children inherit process.env.PATH which includes our fake-ml bin/.
+		// Children inherit process.env.PATH which includes our fake-luuna-atlas bin/.
 		env: { ...process.env },
 	});
 	const stdout = await new Response(proc.stdout).text();
@@ -50,7 +50,7 @@ async function writeFakeMl(opts: {
 	recordJson?: unknown;
 }): Promise<void> {
 	const recordExit = opts.recordExit ?? 0;
-	// Default ml status response: declares one domain "commands" so domain
+	// Default luuna-atlas status response: declares one domain "commands" so domain
 	// inference can match a label-bearing seed.
 	const statusJson =
 		opts.statusJson === undefined
@@ -62,8 +62,8 @@ async function writeFakeMl(opts: {
 			: opts.statusJson;
 	const statusJsonStr = JSON.stringify(statusJson);
 	// recordJson stub: when set, the fake emits this on `record` so the parent
-	// process can parse a mulch id from stdout. Default empty mirrors older
-	// mulch CLIs that didn't accept --json on record.
+	// process can parse a luuna-atlas id from stdout. Default empty mirrors older
+	// luuna-atlas CLIs that didn't accept --json on record.
 	const recordJsonStr = opts.recordJson === undefined ? "" : JSON.stringify(opts.recordJson);
 	const body = `const fs = require("node:fs");
 const argv = process.argv.slice(2);
@@ -81,7 +81,7 @@ if (argv[0] === "record") {
 }
 process.exit(0);
 `;
-	await writeFakeBin(binDir, "ml", body);
+	await writeFakeBin(binDir, "luuna-atlas", body);
 }
 
 async function readInvocations(): Promise<string[][]> {
@@ -104,7 +104,7 @@ async function createSeedWithLabel(cwd: string, title: string, label: string): P
 }
 
 const VALID_CONTEXT =
-	"This work matters because we need to enable structured planning for AI agents using seeds.";
+	"This work matters because we need to enable structured planning for AI agents using missions.";
 
 function validPlan(approach: string): unknown {
 	return {
@@ -129,8 +129,8 @@ async function writePlan(cwd: string, plan: unknown): Promise<string> {
 	return path;
 }
 
-describe("sd plan submit --record-decision", () => {
-	test("invokes ml record with documented args when ml + domain available", async () => {
+describe("luuna-missions plan submit --record-decision", () => {
+	test("invokes luuna-atlas record with documented args when luuna-atlas + domain available", async () => {
 		await writeFakeMl({});
 		const seedId = await createSeedWithLabel(tmpDir, "Add OAuth login", "commands");
 		const planPath = await writePlan(tmpDir, validPlan("Use OAuth library"));
@@ -154,14 +154,14 @@ describe("sd plan submit --record-decision", () => {
 		const idx = (flag: string): number => args.indexOf(flag);
 		expect(args[idx("--type") + 1]).toBe("decision");
 		expect(args[idx("--rationale") + 1]).toBe("Use OAuth library");
-		expect(args[idx("--evidence-seeds") + 1]).toBe(out.plan_id);
-		// --title must be present (mulch requires it for decision records).
+		expect(args[idx("--evidence-missions") + 1]).toBe(out.plan_id);
+		// --title must be present (luuna-atlas requires it for decision records).
 		expect(idx("--title")).toBeGreaterThanOrEqual(0);
-		// --json is appended so we can parse the recorded mulch id from stdout.
+		// --json is appended so we can parse the recorded luuna-atlas id from stdout.
 		expect(idx("--json")).toBeGreaterThanOrEqual(0);
 	});
 
-	test("success with parseable mulch id surfaces the id on stdout (human mode)", async () => {
+	test("success with parseable luuna-atlas id surfaces the id on stdout (human mode)", async () => {
 		await writeFakeMl({
 			recordJson: { success: true, command: "record", record: { id: "mx-abc123" } },
 		});
@@ -173,13 +173,13 @@ describe("sd plan submit --record-decision", () => {
 			tmpDir,
 		);
 		expect(res.exitCode).toBe(0);
-		expect(res.stdout).toContain("recorded mulch decision");
+		expect(res.stdout).toContain("recorded luuna-atlas decision");
 		expect(res.stdout).toContain("mx-abc123");
 		// No warning on the success path.
 		expect(res.stderr).not.toContain("⚠ --record-decision");
 	});
 
-	test("--json suppresses the human mulch confirmation line on stdout", async () => {
+	test("--json suppresses the human luuna-atlas confirmation line on stdout", async () => {
 		await writeFakeMl({
 			recordJson: { success: true, command: "record", record: { id: "mx-deadbe" } },
 		});
@@ -194,10 +194,10 @@ describe("sd plan submit --record-decision", () => {
 		// JSON consumers must get parseable JSON only — no human lines.
 		const parsed = JSON.parse(res.stdout) as { success: boolean };
 		expect(parsed.success).toBe(true);
-		expect(res.stdout).not.toContain("recorded mulch decision");
+		expect(res.stdout).not.toContain("recorded luuna-atlas decision");
 	});
 
-	test("ml record exits non-zero -> submit succeeds, plan written, stderr warns", async () => {
+	test("luuna-atlas record exits non-zero -> submit succeeds, plan written, stderr warns", async () => {
 		await writeFakeMl({ recordExit: 7 });
 		const seedId = await createSeedWithLabel(tmpDir, "Bad-record case", "commands");
 		const planPath = await writePlan(tmpDir, validPlan("OAuth approach"));
@@ -208,10 +208,10 @@ describe("sd plan submit --record-decision", () => {
 		);
 		expect(res.exitCode).toBe(0);
 		expect(res.stderr).toContain("--record-decision");
-		expect(res.stderr.toLowerCase()).toContain("ml record failed");
+		expect(res.stderr.toLowerCase()).toContain("luuna-atlas record failed");
 
 		// Plan row was still persisted atomically.
-		const plansFile = join(tmpDir, ".seeds", "plans.jsonl");
+		const plansFile = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const raw = await readFile(plansFile, "utf8");
 		const lines = raw.split("\n").filter((l) => l.length > 0);
 		expect(lines.length).toBe(1);
@@ -220,12 +220,12 @@ describe("sd plan submit --record-decision", () => {
 		expect(plan.status).toBe("approved");
 	});
 
-	test("ml absent -> submit succeeds with stderr warning", async () => {
-		const seedId = await createSeedWithLabel(tmpDir, "No ml available", "commands");
+	test("luuna-atlas absent -> submit succeeds with stderr warning", async () => {
+		const seedId = await createSeedWithLabel(tmpDir, "No luuna-atlas available", "commands");
 		const planPath = await writePlan(tmpDir, validPlan("Some approach"));
 
 		// Invoke bun by absolute path so we can set PATH to an empty dir — the
-		// child process's Bun.which("ml") then has no chance of finding ml on
+		// child process's Bun.which("luuna-atlas") then has no chance of finding luuna-atlas on
 		// the developer's host machine.
 		const proc = Bun.spawn(
 			[
@@ -244,7 +244,7 @@ describe("sd plan submit --record-decision", () => {
 				cwd: tmpDir,
 				stdout: "pipe",
 				stderr: "pipe",
-				env: { ...process.env, PATH: binDir }, // binDir has no `ml` written
+				env: { ...process.env, PATH: binDir }, // binDir has no `luuna-atlas` written
 			},
 		);
 		const stdout = await new Response(proc.stdout).text();
@@ -253,7 +253,7 @@ describe("sd plan submit --record-decision", () => {
 
 		expect(exitCode).toBe(0);
 		expect(stderr).toContain("--record-decision");
-		expect(stderr).toContain("ml not found");
+		expect(stderr).toContain("luuna-atlas not found");
 
 		const out = JSON.parse(stdout) as { success: boolean };
 		expect(out.success).toBe(true);

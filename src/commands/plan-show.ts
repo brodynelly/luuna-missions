@@ -1,4 +1,4 @@
-import { findSeedsDir, loadPlanTemplates, maxPlanDepth, readConfig } from "../config.ts";
+import { findMissionsDir, loadPlanTemplates, maxPlanDepth, readConfig } from "../config.ts";
 import { accent, brand, muted, outputJson } from "../output.ts";
 import { type ChildSummary, summarisePlanChildren } from "../plan-context.ts";
 import { readIssues, readPlans } from "../store.ts";
@@ -28,7 +28,7 @@ function buildPlansBySeed(plans: Plan[]): Map<string, Plan> {
 }
 
 function truncationHint(planId: string): string {
-	return `depth limit reached — use \`sd plan show ${planId}\` to drill in`;
+	return `depth limit reached — use \`luuna-missions plan show ${planId}\` to drill in`;
 }
 
 // PLAN_SPEC.md:340, 425, 430 — recurse through nested plans up to max_plan_depth.
@@ -126,7 +126,7 @@ function renderStepEntry(marker: string, entry: Record<string, unknown>): void {
 	const subIndent = " ".repeat(marker.length + 1);
 	const blocks = entry.blocks;
 	if (Array.isArray(blocks) && blocks.length > 0) {
-		// blocks values are stored 1-based (seeds-185f), so render verbatim.
+		// blocks values are stored 1-based (missions-185f), so render verbatim.
 		const labels = blocks
 			.map((b) => (typeof b === "number" ? String(b) : JSON.stringify(b)))
 			.join(", ");
@@ -138,7 +138,7 @@ function renderStepEntry(marker: string, entry: Record<string, unknown>): void {
 	if (typeof entry.plan_template === "string" && entry.plan_template.length > 0) {
 		console.log(`${subIndent}${muted(`plan_template: ${entry.plan_template}`)}`);
 	}
-	// STEP_SCHEMA surfaces (seeds-5892): type, priority, labels, existing_seed
+	// STEP_SCHEMA surfaces (missions-5892): type, priority, labels, existing_seed
 	// are first-class in --json but were previously dropped from the human
 	// render. Emit each as a dim sub-line when present and non-empty.
 	if (typeof entry.type === "string" && entry.type.length > 0) {
@@ -155,7 +155,7 @@ function renderStepEntry(marker: string, entry: Record<string, unknown>): void {
 		console.log(`${subIndent}${muted(`labels: ${rendered}`)}`);
 	}
 	// When existing_seed is the headline we skip the sub-line to avoid the
-	// redundant `(adopt seeds-xxxx)` + `existing_seed: seeds-xxxx` pair.
+	// redundant `(adopt missions-xxxx)` + `existing_seed: missions-xxxx` pair.
 	if (hasTitle && typeof entry.existing_seed === "string" && entry.existing_seed.length > 0) {
 		console.log(`${subIndent}${muted(`existing_seed: ${entry.existing_seed}`)}`);
 	}
@@ -219,35 +219,39 @@ function renderNestedPlanHuman(entry: PlanTreeEntry, indent: string): void {
 	}
 }
 
-// Accept either a plan id (pl-xxxx) or a seed id; seeds resolve through
+// Accept either a plan id (pl-xxxx) or a seed id; missions resolve through
 // seed.plan_id (PLAN_SPEC contract: "the seed knows its plan"). The shared
 // helper keeps show/validate/outcome/review consistent so an agent that has a
-// seed id in hand never has to round-trip through `sd plan list` for the
+// seed id in hand never has to round-trip through `luuna-missions plan list` for the
 // pl-xxxx token.
 export async function resolvePlanIdArg(arg: string, dir: string): Promise<string> {
 	if (arg.startsWith("pl-")) return arg;
 	const issues = await readIssues(dir);
 	const seed = issues.find((i) => i.id === arg);
 	if (!seed) {
-		throw new Error(`Plan not found: ${arg}. Run 'sd plan list' to see available plans.`);
+		throw new Error(
+			`Plan not found: ${arg}. Run 'luuna-missions plan list' to see available plans.`,
+		);
 	}
 	if (!seed.plan_id) {
 		throw new Error(
-			`Seed ${arg} has no plan. Submit one with 'sd plan submit ${arg} --plan <file>'.`,
+			`Seed ${arg} has no plan. Submit one with 'luuna-missions plan submit ${arg} --plan <file>'.`,
 		);
 	}
 	return seed.plan_id;
 }
 
 export async function runShow(idArg: string, jsonMode: boolean): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(idArg, dir);
 	const config = await readConfig(dir);
 	const maxDepth = maxPlanDepth(config);
 	const plans = await readPlans(dir);
 	const plan = plans.find((p) => p.id === planId);
 	if (!plan) {
-		throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+		throw new Error(
+			`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+		);
 	}
 	const issues = await readIssues(dir);
 	const plansBySeed = buildPlansBySeed(plans);

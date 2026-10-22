@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Command } from "commander";
-import { findSeedsDir, projectRootFromSeedsDir } from "../config.ts";
+import { findMissionsDir, projectRootFromMissionsDir } from "../config.ts";
+import { upgradeLegacyMarkers } from "../legacy-layout.ts";
 import { hasMarkerSection, replaceMarkerSection, wrapInMarkers } from "../markers.ts";
 import { outputJson, printError, printSuccess } from "../output.ts";
 import { VERSION } from "../version.ts";
@@ -10,27 +11,27 @@ import { VERSION } from "../version.ts";
 // in a way agents should re-render. Independent of the package version so patch releases
 // don't mark every existing snippet as outdated.
 const ONBOARD_SCHEMA = 8;
-const SCHEMA_MARKER = `<!-- seeds-onboard-schema:${String(ONBOARD_SCHEMA)} -->`;
-const VERSION_MARKER = `<!-- seeds-onboard:v${VERSION} -->`;
-const LEGACY_VERSION_MARKER_PREFIX = "<!-- seeds-onboard-v:";
+const SCHEMA_MARKER = `<!-- missions-onboard-schema:${String(ONBOARD_SCHEMA)} -->`;
+const VERSION_MARKER = `<!-- missions-onboard:v${VERSION} -->`;
+const LEGACY_VERSION_MARKER_PREFIX = "<!-- missions-onboard-v:";
 
 const CANDIDATE_FILES = ["CLAUDE.md", ".claude/CLAUDE.md", "AGENTS.md"] as const;
 
 function onboardSnippet(): string {
-	return `## Issue Tracking (Seeds)
+	return `## Issue Tracking (Missions)
 ${VERSION_MARKER}
 ${SCHEMA_MARKER}
 
-This project uses [Seeds](https://github.com/jayminwest/seeds) v${VERSION} (\`sd\`) for git-native issue tracking. Run \`sd prime\` at session start for the workflow and live state (in-progress and ready issues), or run \`sd setup claude\` once to do it automatically.
+This project uses [Missions](https://github.com/brodynelly/luuna-missions) v${VERSION} (\`lm\`) for git-native issue tracking. Run \`luuna-missions prime\` at session start for the workflow and live state (in-progress and ready issues), or run \`luuna-missions setup claude\` once to do it automatically.
 
-- \`sd ready\` — Find unblocked work
-- \`sd update <id> --claim\` — Claim work (atomic)
-- \`sd create --title "..." [--from <id>]\` — File work
-- \`sd close <id>\` — Complete work
-- \`sd plan prompt <id>\` — Decompose large or ambiguous work
-- \`sd sync\` — Commit \`.seeds/\` changes
+- \`luuna-missions ready\` — Find unblocked work
+- \`luuna-missions update <id> --claim\` — Claim work (atomic)
+- \`luuna-missions create --title "..." [--from <id>]\` — File work
+- \`luuna-missions close <id>\` — Complete work
+- \`luuna-missions plan prompt <id>\` — Decompose large or ambiguous work
+- \`luuna-missions sync\` — Commit \`.luuna/missions/\` changes
 
-Never hand-edit \`.seeds/*.jsonl\`; \`sd\` locks and validates the store.`;
+Never hand-edit \`.luuna/missions/*.jsonl\`; \`luuna-missions\` locks and validates the store.`;
 }
 
 function findTargetFile(projectRoot: string): string | null {
@@ -43,9 +44,10 @@ function findTargetFile(projectRoot: string): string | null {
 	return null;
 }
 
-function detectStatus(content: string): "missing" | "current" | "outdated" {
+function detectStatus(rawContent: string): "missing" | "current" | "outdated" {
+	const content = upgradeLegacyMarkers(rawContent);
 	if (!hasMarkerSection(content)) return "missing";
-	// Legacy snippets used `seeds-onboard-v:N`. Always treat them as outdated so
+	// Legacy snippets used `missions-onboard-v:N`. Always treat them as outdated so
 	// the next run upgrades them to the new schema/version markers.
 	if (content.includes(LEGACY_VERSION_MARKER_PREFIX)) return "outdated";
 	if (content.includes(SCHEMA_MARKER)) return "current";
@@ -57,8 +59,8 @@ export async function run(args: string[]): Promise<void> {
 	const stdoutMode = args.includes("--stdout");
 	const checkMode = args.includes("--check");
 
-	const seedsDir = await findSeedsDir();
-	const projectRoot = projectRootFromSeedsDir(seedsDir);
+	const missionsDir = await findMissionsDir();
+	const projectRoot = projectRootFromMissionsDir(missionsDir);
 
 	const targetPath = findTargetFile(projectRoot);
 	const snippet = onboardSnippet();
@@ -100,7 +102,7 @@ export async function run(args: string[]): Promise<void> {
 		if (jsonMode) {
 			await outputJson({ success: true, command: "onboard", action: "created", file: filePath });
 		} else {
-			printSuccess(`Created ${filePath} with seeds section`);
+			printSuccess(`Created ${filePath} with missions section`);
 		}
 		return;
 	}
@@ -117,7 +119,7 @@ export async function run(args: string[]): Promise<void> {
 				file: filePath,
 			});
 		} else {
-			printSuccess("Seeds section is already up to date");
+			printSuccess("Missions section is already up to date");
 		}
 		return;
 	}
@@ -128,7 +130,7 @@ export async function run(args: string[]): Promise<void> {
 			// Defensive: detectStatus saw markers but replaceMarkerSection refused
 			// (e.g. markers out of order, truncated, or duplicated). Surface this
 			// instead of silently no-op'ing — agents need to know their snippet is stale.
-			const msg = `Found seeds markers in ${filePath} but could not replace the section (markers may be malformed, out of order, or duplicated). Fix the file manually or remove the seeds:start/seeds:end block and re-run.`;
+			const msg = `Found missions markers in ${filePath} but could not replace the section (markers may be malformed, out of order, or duplicated). Fix the file manually or remove the missions:start/missions:end block and re-run.`;
 			if (jsonMode) {
 				await outputJson({
 					success: false,
@@ -152,7 +154,7 @@ export async function run(args: string[]): Promise<void> {
 				file: filePath,
 			});
 		} else {
-			printSuccess(`Updated seeds section in ${filePath}`);
+			printSuccess(`Updated missions section in ${filePath}`);
 		}
 		return;
 	}
@@ -163,14 +165,14 @@ export async function run(args: string[]): Promise<void> {
 	if (jsonMode) {
 		await outputJson({ success: true, command: "onboard", action: "appended", file: filePath });
 	} else {
-		printSuccess(`Added seeds section to ${filePath}`);
+		printSuccess(`Added missions section to ${filePath}`);
 	}
 }
 
 export function register(program: Command): void {
 	program
 		.command("onboard")
-		.description("Add seeds section to CLAUDE.md / AGENTS.md")
+		.description("Add missions section to CLAUDE.md / AGENTS.md")
 		.option("--stdout", "Print what would be written to stdout")
 		.option("--check", "Check status without modifying files")
 		.option("--json", "Output as JSON")

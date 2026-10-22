@@ -21,22 +21,22 @@ beforeAll(async () => {
 	await registerAll(fullProgram);
 });
 
-describe("sd completions (script generators)", () => {
+describe("luuna-missions completions (script generators)", () => {
 	test("bash output contains complete -F", () => {
 		const out = generateBash(fullProgram);
 		expect(out).toContain("complete -F");
-		expect(out).toContain("_sd_completions");
+		expect(out).toContain("_luuna_missions_completions");
 	});
 
-	test("zsh output contains #compdef sd", () => {
+	test("zsh output contains #compdef luuna-missions lm", () => {
 		const out = generateZsh(fullProgram);
-		expect(out).toContain("#compdef sd");
-		expect(out).toContain("_sd");
+		expect(out).toContain("#compdef luuna-missions lm");
+		expect(out).toContain("_luuna_missions");
 	});
 
-	test("fish output contains complete -c sd", () => {
+	test("fish output contains complete -c luuna-missions", () => {
 		const out = generateFish(fullProgram);
-		expect(out).toContain("complete -c sd");
+		expect(out).toContain("complete -c luuna-missions");
 	});
 
 	test("output includes known commands", () => {
@@ -58,13 +58,13 @@ describe("sd completions (script generators)", () => {
 	});
 });
 
-describe("sd completions (CLI validation)", () => {
+describe("luuna-missions completions (CLI validation)", () => {
 	let tmpDir: string;
 
 	beforeAll(async () => {
 		// runCli chdirs into the working dir; give it a real temp dir even
 		// though `completions` itself doesn't touch the filesystem.
-		tmpDir = await mkdtemp(join(tmpdir(), "seeds-completions-"));
+		tmpDir = await mkdtemp(join(tmpdir(), "missions-completions-"));
 	});
 
 	test("unknown shell exits non-zero with printError ✗ prefix", async () => {

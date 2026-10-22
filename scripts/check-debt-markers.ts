@@ -9,7 +9,7 @@
  * Tracker regex patterns are sourced from `budgets/debt-markers-budget.json`
  * under the `trackerPatterns` key. Patterns are JavaScript regex sources,
  * matched case-insensitively. Defaults cover ecosystem tracker prefixes
- * (warren / pl / mx / burrow / canopy / seeds / mulch / sapling /
+ * (warren / pl / mx / burrow / beacon / missions / atlas / sapling /
  * overstory), GitHub-style `#NNN` references, and any URL.
  *
  * Untracked markers must either be removed, paired with a tracker

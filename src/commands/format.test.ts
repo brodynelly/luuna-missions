@@ -29,7 +29,7 @@ async function create(title: string, priority: number, cwd: string): Promise<str
 const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`);
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-format-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-format-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -37,7 +37,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("--format on sd list", () => {
+describe("--format on luuna-missions list", () => {
 	test("ids mode prints only ids, one per line", async () => {
 		const a = await create("alpha", 1, tmpDir);
 		const b = await create("bravo", 0, tmpDir);
@@ -93,7 +93,7 @@ describe("--format on sd list", () => {
 	});
 });
 
-describe("--format on sd ready", () => {
+describe("--format on luuna-missions ready", () => {
 	test("ids mode prints only ready ids", async () => {
 		const a = await create("alpha", 1, tmpDir);
 		const b = await create("bravo", 0, tmpDir);
@@ -104,7 +104,7 @@ describe("--format on sd ready", () => {
 	});
 });
 
-describe("--format on sd show", () => {
+describe("--format on luuna-missions show", () => {
 	test("ids mode prints only the id", async () => {
 		const id = await create("hello", 2, tmpDir);
 		const { stdout, exitCode } = await run(["show", id, "--format", "ids"], tmpDir);
@@ -130,8 +130,8 @@ describe("--format on sd show", () => {
 
 	test("default and plain modes render Extensions line when present", async () => {
 		const id = await create("ext-host", 2, tmpDir);
-		// Rewrite the issue with extensions; sd update --extensions lands in seeds-be14.
-		const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+		// Rewrite the issue with extensions; luuna-missions update --extensions lands in missions-be14.
+		const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 		const raw = await Bun.file(issuesPath).text();
 		const lines = raw.split("\n").filter(Boolean);
 		const issue = JSON.parse(lines[lines.length - 1] ?? "{}") as Record<string, unknown>;
@@ -163,7 +163,7 @@ describe("--format on sd show", () => {
 		const missing = await run(["show", id], tmpDir);
 		expect(missing.stdout).not.toContain("Extensions:");
 
-		const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+		const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 		const raw = await Bun.file(issuesPath).text();
 		const last = raw.split("\n").filter(Boolean).pop() ?? "{}";
 		const issue = JSON.parse(last) as Record<string, unknown>;
@@ -175,7 +175,7 @@ describe("--format on sd show", () => {
 
 	test("json mode includes extensions on the issue payload", async () => {
 		const id = await create("ext-json", 2, tmpDir);
-		const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+		const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 		const raw = await Bun.file(issuesPath).text();
 		const last = raw.split("\n").filter(Boolean).pop() ?? "{}";
 		const issue = JSON.parse(last) as Record<string, unknown>;
@@ -190,7 +190,7 @@ describe("--format on sd show", () => {
 	});
 });
 
-describe("--format on sd blocked", () => {
+describe("--format on luuna-missions blocked", () => {
 	test("ids mode prints blocked issue ids", async () => {
 		const a = await create("blocker", 0, tmpDir);
 		const b = await create("blocked", 0, tmpDir);
@@ -201,7 +201,7 @@ describe("--format on sd blocked", () => {
 	});
 });
 
-describe("--format on sd stats", () => {
+describe("--format on luuna-missions stats", () => {
 	test("plain mode strips ANSI", async () => {
 		await create("a", 0, tmpDir);
 		const { stdout } = await run(["stats", "--format", "plain"], tmpDir);

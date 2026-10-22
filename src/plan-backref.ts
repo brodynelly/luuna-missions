@@ -1,15 +1,17 @@
-// seeds-76af: child seeds spawned by `sd plan submit` carry a backref block in
+import { upgradeLegacyMarkers } from "./legacy-layout.ts";
+
+// 76af: child missions spawned by `luuna-missions plan submit` carry a backref block in
 // description so an agent picking one up cold has the framing the plan author
 // already wrote down — without having to navigate plan_id → parent → plan.
 
-export const BACKREF_START = "<!-- seeds:plan-backref:start -->";
-export const BACKREF_END = "<!-- seeds:plan-backref:end -->";
+export const BACKREF_START = "<!-- missions:plan-backref:start -->";
+export const BACKREF_END = "<!-- missions:plan-backref:end -->";
 
 const APPROACH_EXCERPT_MAX = 240;
 
 export interface BackrefArgs {
 	// 0-based step index in plan.sections.steps. Omit for loose adoptions
-	// (sd plan adopt without --step) where the seed has no step anchor.
+	// (luuna-missions plan adopt without --step) where the seed has no step anchor.
 	stepIndex?: number;
 	planId: string;
 	parentSeedId: string;
@@ -32,7 +34,7 @@ export function buildPlanBackref(args: BackrefArgs): string {
 	if (excerpt) lines.push(`Plan approach: ${excerpt}`);
 	lines.push("");
 	lines.push(
-		`Run \`sd plan show ${args.planId}\` for the full plan (context, alternatives, sibling steps, acceptance criteria).`,
+		`Run \`luuna-missions plan show ${args.planId}\` for the full plan (context, alternatives, sibling steps, acceptance criteria).`,
 	);
 	const body = lines.join("\n");
 	return `${BACKREF_START}\n${body}\n${BACKREF_END}`;
@@ -42,7 +44,7 @@ export function buildPlanBackref(args: BackrefArgs): string {
 // front of the existing description so manual notes survive plan overwrite.
 export function applyPlanBackref(existing: string | undefined, args: BackrefArgs): string {
 	const block = buildPlanBackref(args);
-	const prior = existing ?? "";
+	const prior = upgradeLegacyMarkers(existing ?? "");
 	if (hasBackrefMarkers(prior)) {
 		return replaceBackrefSection(prior, block);
 	}
@@ -54,8 +56,9 @@ export function applyPlanBackref(existing: string | undefined, args: BackrefArgs
 // seed loses its plan framing. Manual notes wrapping the block are preserved;
 // whitespace at the new boundary is collapsed. Returns undefined when nothing
 // but the block remained, so the caller can drop the field entirely.
-export function stripPlanBackref(existing: string | undefined): string | undefined {
-	if (existing === undefined) return undefined;
+export function stripPlanBackref(raw: string | undefined): string | undefined {
+	if (raw === undefined) return undefined;
+	const existing = upgradeLegacyMarkers(raw);
 	if (!hasBackrefMarkers(existing)) return existing;
 	const startIdx = existing.indexOf(BACKREF_START);
 	const endIdx = existing.indexOf(BACKREF_END);

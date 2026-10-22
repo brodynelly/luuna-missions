@@ -20,7 +20,7 @@ async function readyIds(cwd: string, extra: string[] = []): Promise<string[]> {
 }
 
 async function setExtensions(seedId: string, ext: Record<string, unknown>): Promise<void> {
-	const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+	const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 	const text = await Bun.file(issuesPath).text();
 	const lines = text.split("\n").filter((l) => l.trim());
 	const updated = lines.map((l) => {
@@ -32,7 +32,7 @@ async function setExtensions(seedId: string, ext: Record<string, unknown>): Prom
 }
 
 async function setRequiresPlan(seedId: string): Promise<void> {
-	const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+	const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 	const text = await Bun.file(issuesPath).text();
 	const lines = text.split("\n").filter((l) => l.trim());
 	const updated = lines.map((l) => {
@@ -60,7 +60,7 @@ async function injectSubPlan(
 		createdAt: now,
 		updatedAt: now,
 	};
-	const planPath = join(tmpDir, ".seeds", "plans.jsonl");
+	const planPath = join(tmpDir, ".luuna/missions", "plans.jsonl");
 	const existing = (await Bun.file(planPath).exists()) ? await Bun.file(planPath).text() : "";
 	await Bun.write(
 		planPath,
@@ -74,7 +74,7 @@ async function createSeed(title: string, cwd: string, type = "task"): Promise<st
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-ready-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-ready-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -82,7 +82,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd ready: requires_plan exclusion (PLAN_SPEC.md:342)", () => {
+describe("luuna-missions ready: requires_plan exclusion (PLAN_SPEC.md:342)", () => {
 	test("seed with requires_plan and no plan is hidden from ready", async () => {
 		const seedId = await createSeed("Needs sub-plan", tmpDir, "epic");
 		await setRequiresPlan(seedId);
@@ -136,7 +136,7 @@ describe("sd ready: requires_plan exclusion (PLAN_SPEC.md:342)", () => {
 		expect(found?.requires_plan).toBe(true);
 	});
 
-	test("seeds without requires_plan behave exactly as before (regression)", async () => {
+	test("missions without requires_plan behave exactly as before (regression)", async () => {
 		const a = await createSeed("Plain a", tmpDir);
 		const b = await createSeed("Plain b", tmpDir);
 		const ids = await readyIds(tmpDir);
@@ -145,8 +145,8 @@ describe("sd ready: requires_plan exclusion (PLAN_SPEC.md:342)", () => {
 	});
 });
 
-describe("sd ready --respect-schedule (pl-c195 step 4)", () => {
-	test("default sd ready ignores extensions.queued and extensions.scheduledFor", async () => {
+describe("luuna-missions ready --respect-schedule (pl-c195 step 4)", () => {
+	test("default luuna-missions ready ignores extensions.queued and extensions.scheduledFor", async () => {
 		const queued = await createSeed("Queued", tmpDir);
 		const future = await createSeed("Future", tmpDir);
 		await setExtensions(queued, { queued: true });
@@ -209,7 +209,7 @@ describe("sd ready --respect-schedule (pl-c195 step 4)", () => {
 	});
 });
 
-describe("sd ready --type validation", () => {
+describe("luuna-missions ready --type validation", () => {
 	test("rejects invalid --type value (human)", async () => {
 		const { exitCode, stderr } = await run(["ready", "--type", "bogus"], tmpDir);
 		expect(exitCode).not.toBe(0);

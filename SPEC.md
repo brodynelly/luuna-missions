@@ -1,8 +1,8 @@
-# Seeds
+# Missions
 
 Git-native issue tracker for AI agent workflows. Zero dependencies, JSONL storage, Bun runtime.
 
-Replaces [beads](https://github.com/steveyegge/beads) in the overstory/mulch ecosystem with something purpose-built: no Dolt, no daemon, no binary DB files. The JSONL file IS the database.
+Replaces [beads](https://github.com/steveyegge/beads) in the overstory and Luuna Atlas ecosystem with something purpose-built: no Dolt, no daemon, no binary DB files. The JSONL file IS the database.
 
 ## Why
 
@@ -14,7 +14,7 @@ Beads works but carries baggage overstory doesn't need:
 - **Concurrent access contention** — multiple agents fighting over `beads.db` lock
 - **Dual source of truth** — binary DB + JSONL export, manually kept in sync
 
-Overstory uses ~7 beads operations on a simple data model. Seeds covers exactly that surface.
+Overstory uses ~7 beads operations on a simple data model. Missions covers exactly that surface.
 
 ## Design Principles
 
@@ -22,13 +22,13 @@ Overstory uses ~7 beads operations on a simple data model. Seeds covers exactly 
 2. **Zero runtime dependencies.** Bun built-ins only (`Bun.file`, `Bun.write`, `node:fs`, `node:crypto`).
 3. **Concurrent-safe by default.** Advisory file locks + atomic writes. Multiple agents in worktrees can read/write safely.
 4. **Git-native.** `merge=union` gitattribute handles parallel branch merges. No custom merge driver needed.
-5. **Ecosystem fit.** Same stack as overstory (Bun/TS), same patterns as mulch (JSONL + locks), same CLI conventions (`--json` flag on everything).
+5. **Ecosystem fit.** Same stack as overstory (Bun/TS), same patterns as Luuna Atlas (JSONL + locks), same CLI conventions (`--json` flag on everything).
 
 ## On-Disk Format
 
 ```
-.seeds/
-  config.yaml          # Project config (YAML, matches overstory/mulch convention)
+.luuna/missions/
+  config.yaml          # Project config (YAML, matches overstory and Luuna Atlas convention)
   issues.jsonl         # All issues, one JSON object per line
   templates.jsonl      # Molecule/template definitions
   .gitignore           # Ignores lock files
@@ -43,7 +43,7 @@ version: "1"
 
 The `project` field is used as the ID prefix (e.g., `overstory-a1b2`).
 
-YAML parsed by a minimal built-in subset parser (~50 LOC) that handles the flat key-value format seeds needs. No external dependency.
+YAML parsed by a minimal built-in subset parser (~50 LOC) that handles the flat key-value format missions needs. No external dependency.
 
 ### issues.jsonl
 
@@ -71,11 +71,11 @@ Molecule/template definitions, one per line:
 ### .gitattributes (appended to project root)
 
 ```
-.seeds/issues.jsonl merge=union
-.seeds/templates.jsonl merge=union
+.luuna/missions/issues.jsonl merge=union
+.luuna/missions/templates.jsonl merge=union
 ```
 
-Union merge strategy: on branch merge, git takes lines from both sides. Since each issue is one line with a unique ID, this produces correct results for parallel agent work. Duplicate lines (same issue modified on both branches) are handled by seeds' dedup-on-read — last occurrence wins.
+Union merge strategy: on branch merge, git takes lines from both sides. Since each issue is one line with a unique ID, this produces correct results for parallel agent work. Duplicate lines (same issue modified on both branches) are handled by missions' dedup-on-read — last occurrence wins.
 
 ## Data Model
 
@@ -169,73 +169,73 @@ Accepts both numeric (`--priority=2`) and shorthand (`--priority=P2`).
 
 ## CLI
 
-Binary name: `sd` (like `bd` for beads, `mulch` for mulch).
+Binary name: `luuna-missions` (like `bd` for beads, `luuna-atlas` for Luuna Atlas).
 
 Every command supports `--json` for structured output. Non-JSON output is human-readable with ANSI colors (respects `NO_COLOR`).
 
 ### Issue Commands
 
 ```
-sd init                                Initialize .seeds/ in current directory
+luuna-missions init                                Initialize .luuna/missions/ in current directory
 
-sd create                              Create a new issue
+luuna-missions create                              Create a new issue
   --title <text>       (required)
   --type <type>        task|bug|feature|epic (default: task)
   --priority <n>       0-4 or P0-P4 (default: 2)
   --description <text>
   --assignee <name>
 
-sd show <id>                           Show issue details
+luuna-missions show <id>                           Show issue details
 
-sd list                                List issues with filters
+luuna-missions list                                List issues with filters
   --status <status>    open|in_progress|closed
   --type <type>        task|bug|feature|epic
   --assignee <name>
   --limit <n>          Max results (default: 50)
 
-sd ready                               Show open issues with no unresolved blockers
+luuna-missions ready                               Show open issues with no unresolved blockers
 
-sd update <id>                         Update issue fields
+luuna-missions update <id>                         Update issue fields
   --status <status>
   --title <text>
   --priority <n>
   --assignee <name>
   --description <text>
 
-sd close <id> [<id2> ...]              Close one or more issues
+luuna-missions close <id> [<id2> ...]              Close one or more issues
   --reason <text>      Closure summary
 
-sd dep add <issue> <depends-on>        Add dependency (issue depends on depends-on)
-sd dep remove <issue> <depends-on>     Remove dependency
-sd dep list <issue>                    Show deps for an issue
+luuna-missions dep add <issue> <depends-on>        Add dependency (issue depends on depends-on)
+luuna-missions dep remove <issue> <depends-on>     Remove dependency
+luuna-missions dep list <issue>                    Show deps for an issue
 
-sd blocked                             Show all blocked issues
+luuna-missions blocked                             Show all blocked issues
 
-sd stats                               Project statistics (open/closed/blocked counts)
+luuna-missions stats                               Project statistics (open/closed/blocked counts)
 
-sd sync                                Stage and commit .seeds/ changes
+luuna-missions sync                                Stage and commit .luuna/missions/ changes
   --status             Check for uncommitted changes without committing
 ```
 
 ### Template (Molecule) Commands
 
 ```
-sd tpl create                          Create a template
+luuna-missions tpl create                          Create a template
   --name <text>        (required)      Human-readable name
 
-sd tpl step add <template-id>          Add a step to a template
+luuna-missions tpl step add <template-id>          Add a step to a template
   --title <text>       (required)      Step title (supports {prefix} interpolation)
   --type <type>        task|bug|feature|epic (default: task)
   --priority <n>       0-4 (default: 2)
 
-sd tpl list                            List all templates
+luuna-missions tpl list                            List all templates
 
-sd tpl show <template-id>              Show template with steps
+luuna-missions tpl show <template-id>              Show template with steps
 
-sd tpl pour <template-id>              Instantiate template into real issues
+luuna-missions tpl pour <template-id>              Instantiate template into real issues
   --prefix <text>      Replaces {prefix} in step titles
 
-sd tpl status <template-id>            Show convoy status (completion of poured issues)
+luuna-missions tpl status <template-id>            Show convoy status (completion of poured issues)
 ```
 
 ### JSON Output Format
@@ -262,12 +262,12 @@ Template pour:
 
 ## Concurrency Model
 
-Stolen from mulch (which handles multi-agent writes in production today).
+Stolen from Luuna Atlas (which handles multi-agent writes in production today).
 
 ### Advisory File Locking
 
 ```
-Lock file:    .seeds/issues.jsonl.lock
+Lock file:    .luuna/missions/issues.jsonl.lock
 Stale after:  30 seconds
 Retry:        50ms polling
 Timeout:      5 seconds
@@ -294,21 +294,21 @@ Creates (appends) are simpler: acquire lock, append line, release lock.
 
 ### Dedup on Read
 
-After a `merge=union` git merge, `issues.jsonl` may contain duplicate lines for the same issue ID (both branches modified it). On read, seeds deduplicates by ID — last occurrence wins (later line = later mutation).
+After a `merge=union` git merge, `issues.jsonl` may contain duplicate lines for the same issue ID (both branches modified it). On read, missions deduplicates by ID — last occurrence wins (later line = later mutation).
 
 This means:
 - No custom merge driver needed
 - Parallel branch work just works
 - File may grow with duplicates between compactions
-- `sd compact` (future) can remove duplicate lines when needed
+- `luuna-missions compact` (future) can remove duplicate lines when needed
 
 ## Migration from Beads
 
-One-time migration script: `sd migrate-from-beads`
+One-time migration script: `luuna-missions migrate-from-beads`
 
 1. Read `.beads/issues.jsonl` (the JSONL export beads already maintains)
 2. Map fields: `issue_type` → `type`, `owner` → `assignee`, etc.
-3. Write to `.seeds/issues.jsonl`
+3. Write to `.luuna/missions/issues.jsonl`
 4. Preserve original IDs (they already use `{project}-{hex}` format)
 
 The beads JSONL export is the source — no need to touch `beads.db`.
@@ -317,28 +317,28 @@ The beads JSONL export is the source — no need to touch `beads.db`.
 
 ### Client Interface
 
-Overstory wraps seeds the same way it wraps beads — via `Bun.spawn(["sd", ...])` with `--json` parsing. The `BeadsClient` interface maps 1:1:
+Overstory wraps missions the same way it wraps beads — via `Bun.spawn(["luuna-missions", ...])` with `--json` parsing. The `BeadsClient` interface maps 1:1:
 
-| BeadsClient method | sd command |
+| BeadsClient method | luuna-missions command |
 |--------------------|------------|
-| `ready()`          | `sd ready --json` |
-| `show(id)`         | `sd show <id> --json` |
-| `create(title, opts)` | `sd create --title "..." --json` |
-| `claim(id)`        | `sd update <id> --status=in_progress --json` |
-| `close(id, reason)` | `sd close <id> --reason "..." --json` |
-| `list(opts)`       | `sd list --json` |
+| `ready()`          | `luuna-missions ready --json` |
+| `show(id)`         | `luuna-missions show <id> --json` |
+| `create(title, opts)` | `luuna-missions create --title "..." --json` |
+| `claim(id)`        | `luuna-missions update <id> --status=in_progress --json` |
+| `close(id, reason)` | `luuna-missions close <id> --reason "..." --json` |
+| `list(opts)`       | `luuna-missions list --json` |
 
-Rename the client file from `beads/client.ts` to `seeds/client.ts`, update the spawn command, done. The `BeadIssue` → `SeedIssue` type is structurally identical.
+Rename the client file from `beads/client.ts` to `missions/client.ts`, update the spawn command, done. The `BeadIssue` → `SeedIssue` type is structurally identical.
 
 ### Molecule Migration
 
-| BeadsMolecule method | sd command |
+| BeadsMolecule method | luuna-missions command |
 |----------------------|------------|
-| `createMoleculePrototype()` | `sd tpl create --name "..." --json` |
-| `addStep()` | `sd tpl step add <id> --title "..." --json` |
-| `pourMolecule()` | `sd tpl pour <id> --json` |
-| `getConvoyStatus()` | `sd tpl status <id> --json` |
-| `listPrototypes()` | `sd tpl list --json` |
+| `createMoleculePrototype()` | `luuna-missions tpl create --name "..." --json` |
+| `addStep()` | `luuna-missions tpl step add <id> --title "..." --json` |
+| `pourMolecule()` | `luuna-missions tpl pour <id> --json` |
+| `getConvoyStatus()` | `luuna-missions tpl status <id> --json` |
+| `listPrototypes()` | `luuna-missions tpl list --json` |
 
 ### Agent-Facing Commands
 
@@ -346,54 +346,54 @@ Agents use the same commands they currently use with beads:
 
 ```bash
 # Builder agents
-sd show <task-id>                    # View assigned task
-sd close <task-id> --reason "..."    # Report completion
+luuna-missions show <task-id>                    # View assigned task
+luuna-missions close <task-id> --reason "..."    # Report completion
 
 # Lead agents
-sd create --title="..." --type=task --priority=2
-sd show <id>
-sd ready
-sd close <id> --reason "..."
-sd sync
+luuna-missions create --title="..." --type=task --priority=2
+luuna-missions show <id>
+luuna-missions ready
+luuna-missions close <id> --reason "..."
+luuna-missions sync
 ```
 
 ### Hooks Integration
 
-Seeds hooks are simpler than beads' — there's no daemon to manage and no export pipeline. The only hook seeds needs is optional:
+Missions hooks are simpler than beads' — there's no daemon to manage and no export pipeline. The only hook missions needs is optional:
 
 ```json
 {
   "hooks": {
     "PreCommit": [{
-      "command": "sd sync --status",
-      "description": "Warn if seeds changes are unstaged"
+      "command": "luuna-missions sync --status",
+      "description": "Warn if missions changes are unstaged"
     }]
   }
 }
 ```
 
-## What Seeds Does NOT Do
+## What Missions Does NOT Do
 
 Explicitly out of scope (keep it minimal):
 
 - **No daemon.** No background process, no socket, no PID files.
 - **No binary database.** JSONL only. No SQLite, no Dolt.
-- **No audit trail / version history.** Git IS the audit trail. Use `git log .seeds/issues.jsonl`.
+- **No audit trail / version history.** Git IS the audit trail. Use `git log .luuna/missions/issues.jsonl`.
 - **No custom merge driver.** `merge=union` handles everything. Dedup on read handles edge cases.
 - **No user management.** Assignee is a free-text string. No authentication, no permissions.
-- **No remote sync.** `sd sync` commits locally. `git push` handles the rest.
-- **No compact command (yet).** Dedup on read is sufficient. Ship `sd compact` when file bloat becomes a real problem.
+- **No remote sync.** `luuna-missions sync` commits locally. `git push` handles the rest.
+- **No compact command (yet).** Dedup on read is sufficient. Ship `luuna-missions compact` when file bloat becomes a real problem.
 
 ## Tech Stack
 
 | Concern | Choice | Rationale |
 |---------|--------|-----------|
 | Runtime | Bun | Matches overstory, runs TS directly |
-| Language | TypeScript (strict) | Matches overstory/mulch |
+| Language | TypeScript (strict) | Matches overstory and Luuna Atlas |
 | Dependencies | Zero runtime | Matches overstory's hard rule |
-| Config | YAML (minimal built-in parser) | Matches overstory/mulch convention |
+| Config | YAML (minimal built-in parser) | Matches overstory and Luuna Atlas convention |
 | Storage | JSONL | Git-native, diffable, mergeable |
-| Locking | Advisory file locks | Proven in mulch for multi-agent |
+| Locking | Advisory file locks | Proven in Luuna Atlas for multi-agent |
 | Formatting | Biome (tabs, 100 char width) | Matches overstory |
 | Testing | `bun test` (colocated) | Real I/O, no mocks |
 | Distribution | `bun link` locally | No npm publish for now |
@@ -403,7 +403,7 @@ Explicitly out of scope (keep it minimal):
 ### Directory Structure
 
 ```
-seeds/
+missions/
   package.json
   tsconfig.json
   biome.json
@@ -429,19 +429,19 @@ seeds/
     output.ts                 # JSON + human output helpers
     yaml.ts                   # Minimal YAML parser (flat key-value only)
     commands/
-      init.ts                 # sd init
-      create.ts               # sd create
-      show.ts                 # sd show
-      list.ts                 # sd list
-      ready.ts                # sd ready
-      update.ts               # sd update
-      close.ts                # sd close
-      dep.ts                  # sd dep add/remove/list
-      sync.ts                 # sd sync
-      blocked.ts              # sd blocked
-      stats.ts                # sd stats
-      tpl.ts                  # sd tpl create/step/list/show/pour/status
-      migrate.ts              # sd migrate-from-beads
+      init.ts                 # luuna-missions init
+      create.ts               # luuna-missions create
+      show.ts                 # luuna-missions show
+      list.ts                 # luuna-missions list
+      ready.ts                # luuna-missions ready
+      update.ts               # luuna-missions update
+      close.ts                # luuna-missions close
+      dep.ts                  # luuna-missions dep add/remove/list
+      sync.ts                 # luuna-missions sync
+      blocked.ts              # luuna-missions blocked
+      stats.ts                # luuna-missions stats
+      tpl.ts                  # luuna-missions tpl create/step/list/show/pour/status
+      migrate.ts              # luuna-missions migrate-from-beads
     store.test.ts             # Core data layer tests
     id.test.ts                # ID generation tests
     yaml.test.ts              # YAML parser tests
@@ -482,7 +482,7 @@ Script updates both files atomically and prints next steps.
 - Atomic writes with dedup-on-read
 - YAML config, JSONL storage
 - --json flag on all commands
-- Migration from beads (sd migrate-from-beads)
+- Migration from beads (luuna-missions migrate-from-beads)
 ```
 
 ### /release Slash Command

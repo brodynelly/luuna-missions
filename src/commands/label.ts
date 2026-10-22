@@ -1,23 +1,23 @@
 import { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { accent, muted, outputJson, printSuccess } from "../output.ts";
 import { issuesPath, readIssues, withLock, writeIssues } from "../store.ts";
 
 // Exported so plan submit/adopt paths can reuse the same normalization
 // (lowercase, trim, drop empties) when applying step.labels to spawned/
-// adopted children (seeds-745e / seeds-bac9 under pl-e5a8).
+// adopted children (missions-745e / missions-bac9 under pl-e5a8).
 export function normalizeLabels(raw: string[]): string[] {
 	return raw.map((l) => l.trim().toLowerCase()).filter(Boolean);
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const positional = args.filter((a) => !a.startsWith("--"));
 
 	const subcmd = positional[0];
-	if (!subcmd) throw new Error("Usage: sd label <add|remove|list|list-all>");
+	if (!subcmd) throw new Error("Usage: luuna-missions label <add|remove|list|list-all>");
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 
 	if (subcmd === "list-all") {
 		const issues = await readIssues(dir);
@@ -46,7 +46,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 
 	if (subcmd === "list") {
 		const issueId = positional[1];
-		if (!issueId) throw new Error("Usage: sd label list <issue>");
+		if (!issueId) throw new Error("Usage: luuna-missions label list <issue>");
 		const issues = await readIssues(dir);
 		const issue = issues.find((i) => i.id === issueId);
 		if (!issue) throw new Error(`Issue not found: ${issueId}`);
@@ -72,7 +72,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		const issueId = positional[1];
 		const rawLabels = positional.slice(2);
 		if (!issueId || rawLabels.length === 0) {
-			throw new Error("Usage: sd label add <issue> <label> [<label2> ...]");
+			throw new Error("Usage: luuna-missions label add <issue> <label> [<label2> ...]");
 		}
 		const newLabels = normalizeLabels(rawLabels);
 		if (newLabels.length === 0) throw new Error("No valid labels provided");
@@ -102,7 +102,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		const issueId = positional[1];
 		const rawLabels = positional.slice(2);
 		if (!issueId || rawLabels.length === 0) {
-			throw new Error("Usage: sd label remove <issue> <label> [<label2> ...]");
+			throw new Error("Usage: luuna-missions label remove <issue> <label> [<label2> ...]");
 		}
 		const removeSet = new Set(normalizeLabels(rawLabels));
 

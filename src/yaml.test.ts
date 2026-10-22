@@ -24,14 +24,14 @@ describe("parseYaml — flat (legacy)", () => {
 	});
 
 	test("ignores blank lines", () => {
-		const result = parseYaml('project: seeds\n\nversion: "1"');
-		expect(result.project).toBe("seeds");
+		const result = parseYaml('project: missions\n\nversion: "1"');
+		expect(result.project).toBe("missions");
 		expect(result.version).toBe("1");
 	});
 
 	test("ignores comment lines", () => {
-		const result = parseYaml("# This is a comment\nproject: seeds");
-		expect(result.project).toBe("seeds");
+		const result = parseYaml("# This is a comment\nproject: missions");
+		expect(result.project).toBe("missions");
 		expect(Object.keys(result)).not.toContain("# This is a comment");
 	});
 
@@ -40,7 +40,7 @@ describe("parseYaml — flat (legacy)", () => {
 		expect(Object.keys(result)).toHaveLength(0);
 	});
 
-	test("parses config.yaml format used by seeds", () => {
+	test("parses config.yaml format used by missions", () => {
 		const yaml = 'project: overstory\nversion: "1"';
 		const result = parseYaml(yaml);
 		expect(result).toEqual({ project: "overstory", version: "1" });
@@ -52,8 +52,8 @@ describe("parseYaml — flat (legacy)", () => {
 	});
 
 	test("trims whitespace from keys and values", () => {
-		const result = parseYaml("  project : seeds  ");
-		expect(result.project).toBe("seeds");
+		const result = parseYaml("  project : missions  ");
+		expect(result.project).toBe("missions");
 	});
 });
 
@@ -238,9 +238,9 @@ describe("parseYaml — full plan_templates block (PLAN_SPEC.md:36-78)", () => {
 
 describe("stringifyYaml", () => {
 	test("serializes simple key-value pairs", () => {
-		const yaml = stringifyYaml({ project: "seeds", version: "1" });
+		const yaml = stringifyYaml({ project: "missions", version: "1" });
 		const parsed = parseYaml(yaml);
-		expect(parsed.project).toBe("seeds");
+		expect(parsed.project).toBe("missions");
 		expect(parsed.version).toBe("1");
 	});
 
@@ -258,7 +258,7 @@ describe("stringifyYaml", () => {
 
 	test("round-trips nested maps", () => {
 		const original: Record<string, YamlValue> = {
-			project: "seeds",
+			project: "missions",
 			plan_templates: {
 				feature: {
 					sections: {

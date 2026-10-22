@@ -25,7 +25,7 @@ function writeBudget(path: string, trackerPatterns: string[], allowlist: string[
 }
 
 const DEFAULT_PATTERNS = [
-	"\\b(?:warren|pl|mx|burrow|canopy|seeds|mulch)-[0-9a-f]+\\b",
+	"\\b(?:warren|pl|mx|burrow|beacon|missions|atlas)-[0-9a-f]+\\b",
 	"#\\d+\\b",
 	"https?://\\S+",
 ];

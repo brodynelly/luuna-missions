@@ -1,15 +1,16 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { migrateLegacyLayout, upgradeLegacyConfigKeys } from "./legacy-layout.ts";
 import type { Config, PlanTemplate, SectionSpec } from "./types.ts";
-import { CONFIG_FILE, DEFAULT_MAX_PLAN_DEPTH, SECTION_KINDS, SEEDS_DIR_NAME } from "./types.ts";
+import { CONFIG_FILE, DEFAULT_MAX_PLAN_DEPTH, MISSIONS_DIR, SECTION_KINDS } from "./types.ts";
 import { parseYaml, type YamlValue } from "./yaml.ts";
 
-export async function readConfig(seedsDir: string): Promise<Config> {
-	const file = Bun.file(join(seedsDir, CONFIG_FILE));
+export async function readConfig(missionsDir: string): Promise<Config> {
+	const file = Bun.file(join(missionsDir, CONFIG_FILE));
 	const content = await file.text();
 	const data = parseYaml(content);
 	const config: Config = {
-		project: typeof data.project === "string" ? data.project : "seeds",
+		project: typeof data.project === "string" ? data.project : "missions",
 		version: typeof data.version === "string" ? data.version : "1",
 	};
 	if (typeof data.max_plan_depth === "number" && Number.isInteger(data.max_plan_depth)) {
@@ -54,23 +55,23 @@ function gitDir(cwd: string): string | null {
 	}
 }
 
-function resolveWorktreeRoot(candidateSeedsDir: string): string {
-	const candidateRoot = dirname(candidateSeedsDir);
+function resolveWorktreeRoot(candidateMissionsDir: string): string {
+	const candidateRoot = dirname(dirname(candidateMissionsDir));
 	const common = gitCommonDir(candidateRoot);
-	if (!common) return candidateSeedsDir;
+	if (!common) return candidateMissionsDir;
 
 	// .git/worktrees/<name> → strip to repo root; .git → already main
 	const mainRoot = common.endsWith(".git") ? dirname(common) : dirname(dirname(common));
 
 	const mainResolved = resolve(mainRoot);
-	if (mainResolved === resolve(candidateRoot)) return candidateSeedsDir;
+	if (mainResolved === resolve(candidateRoot)) return candidateMissionsDir;
 
-	const mainSeedsDir = join(mainResolved, SEEDS_DIR_NAME);
-	if (existsSync(join(mainSeedsDir, CONFIG_FILE))) {
-		return mainSeedsDir;
+	const mainMissionsDir = join(mainResolved, MISSIONS_DIR);
+	if (existsSync(join(mainMissionsDir, CONFIG_FILE))) {
+		return mainMissionsDir;
 	}
 
-	return candidateSeedsDir;
+	return candidateMissionsDir;
 }
 
 export function isInsideWorktree(dir?: string): boolean {
@@ -84,24 +85,25 @@ export function isInsideWorktree(dir?: string): boolean {
 	return gd !== common;
 }
 
-export async function findSeedsDir(startDir?: string): Promise<string> {
+export async function findMissionsDir(startDir?: string): Promise<string> {
 	let dir = startDir ?? process.cwd();
 	while (true) {
-		const configPath = join(dir, SEEDS_DIR_NAME, CONFIG_FILE);
+		migrateLegacyLayout(dir);
+		const configPath = join(dir, MISSIONS_DIR, CONFIG_FILE);
 		const file = Bun.file(configPath);
 		if (await file.exists()) {
-			return resolveWorktreeRoot(join(dir, SEEDS_DIR_NAME));
+			return resolveWorktreeRoot(join(dir, MISSIONS_DIR));
 		}
 		const parent = dirname(dir);
 		if (parent === dir) {
-			throw new Error("Not in a seeds project. Run `sd init` first.");
+			throw new Error("Not in a missions project. Run `luuna-missions init` first.");
 		}
 		dir = parent;
 	}
 }
 
-export function projectRootFromSeedsDir(seedsDir: string): string {
-	return dirname(seedsDir);
+export function projectRootFromMissionsDir(missionsDir: string): string {
+	return dirname(dirname(missionsDir));
 }
 
 // Built-in `feature` template (PLAN_SPEC.md:36-78, 313-325). Loaded when
@@ -142,9 +144,9 @@ export const BUILTIN_FEATURE_TEMPLATE: PlanTemplate = {
 			required: false,
 			kind: "list",
 			item: "text",
-			mulch_source: "failure",
+			atlas_source: "failure",
 			prompt:
-				"What could go wrong? Known failure modes from prior work are pre-filled when mulch is available.",
+				"What could go wrong? Known failure modes from prior work are pre-filled when luuna-atlas is available.",
 		},
 		acceptance: {
 			required: true,
@@ -204,9 +206,9 @@ export const BUILTIN_BUG_TEMPLATE: PlanTemplate = {
 // Built-in `refactor` template (PLAN_SPEC.md:269). Internal restructuring with
 // no observable behavior change; the invariant is the load-bearing field.
 //
-// Inference choice (PLAN_SPEC.md open question 4 / seeds-6730 decision):
+// Inference choice (PLAN_SPEC.md open question 4 / missions-6730 decision):
 // `refactor` is opt-in via `--template refactor` only. There is no `refactor`
-// seed type in the wider seeds taxonomy, so seed.type → template mapping does
+// seed type in the wider missions taxonomy, so seed.type → template mapping does
 // not auto-route to this template. `bug` chose the opposite direction because
 // `bug` is already a seed type.
 export const BUILTIN_REFACTOR_TEMPLATE: PlanTemplate = {
@@ -253,13 +255,15 @@ const BUILTIN_PLAN_TEMPLATES: Record<string, PlanTemplate> = {
 	refactor: BUILTIN_REFACTOR_TEMPLATE,
 };
 
-export async function loadPlanTemplates(seedsDir: string): Promise<Record<string, PlanTemplate>> {
-	const file = Bun.file(join(seedsDir, CONFIG_FILE));
+export async function loadPlanTemplates(
+	missionsDir: string,
+): Promise<Record<string, PlanTemplate>> {
+	const file = Bun.file(join(missionsDir, CONFIG_FILE));
 	if (!(await file.exists())) {
 		return { ...BUILTIN_PLAN_TEMPLATES };
 	}
 	const content = await file.text();
-	const data = parseYaml(content);
+	const data = upgradeLegacyConfigKeys(parseYaml(content));
 	const userBlock = data.plan_templates;
 	const builtins: Record<string, PlanTemplate> = { ...BUILTIN_PLAN_TEMPLATES };
 	if (!isPlainObject(userBlock)) return builtins;
@@ -307,7 +311,7 @@ function parseSectionSpec(raw: YamlValue, path: string): SectionSpec {
 	if (typeof raw.min_length === "number") spec.min_length = raw.min_length;
 	if (typeof raw.min === "number") spec.min = raw.min;
 	if (raw.item !== undefined) spec.item = parseItem(raw.item, `${path}.item`);
-	if (typeof raw.mulch_source === "string") spec.mulch_source = raw.mulch_source;
+	if (typeof raw.atlas_source === "string") spec.atlas_source = raw.atlas_source;
 	return spec;
 }
 

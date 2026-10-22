@@ -19,19 +19,19 @@ function isEpipe(err: unknown): boolean {
 }
 
 // Write to stdout with backpressure, exiting cleanly when the reader closes
-// the pipe early (the common `sd ... --json | head` idiom, or any consumer
+// the pipe early (the common `luuna-missions ... --json | head` idiom, or any consumer
 // that exits before draining).
 //
 // We write through the Node stream (process.stdout) rather than a single
 // `Bun.write(Bun.stdout, text)`: when the payload exceeds the OS pipe buffer
 // (~64KB) and the reader is slow but stays OPEN (`| cat`, `| grep`, `| wc`),
 // the one-shot Bun.write busy-spins at 100% CPU on Linux and never exits
-// (seeds-18dc) — no EPIPE is raised because the reader hasn't closed.
+// (missions-18dc) — no EPIPE is raised because the reader hasn't closed.
 // stream.write() returns false when the kernel buffer is full; awaiting
 // 'drain' yields instead of spinning. The process-level "error" EPIPE handler
-// in index.ts covers the early-close case (seeds-3024) since this path now
+// in index.ts covers the early-close case (missions-3024) since this path now
 // flows through process.stdout; the local isEpipe guard is a belt-and-braces
-// exit-0 for the write callback. A downstream reader hanging up is not an sd
+// exit-0 for the write callback. A downstream reader hanging up is not an luuna-missions
 // failure.
 export async function writeStdout(text: string): Promise<void> {
 	const stream = process.stdout;

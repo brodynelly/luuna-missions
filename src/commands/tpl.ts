@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { Command } from "commander";
-import { findSeedsDir, readConfig } from "../config.ts";
+import { findMissionsDir, readConfig } from "../config.ts";
 import { generateId } from "../id.ts";
 import { accent, muted, outputJson, printIssueOneLine, printSuccess } from "../output.ts";
 import { isValidPriority, PRIORITY_ERROR, parsePriority } from "../priority.ts";
@@ -51,16 +51,16 @@ function parseArgs(args: string[]) {
 	return { flags, positional };
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const { flags, positional } = parseArgs(args);
 	const subcmd = positional[0];
 
-	if (!subcmd) throw new Error("Usage: sd tpl <create|step|list|show|pour|status>");
+	if (!subcmd) throw new Error("Usage: luuna-missions tpl <create|step|list|show|pour|status>");
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 
-	// sd tpl create --name "..."
+	// luuna-missions tpl create --name "..."
 	if (subcmd === "create") {
 		const name = flags.name;
 		if (!name || typeof name !== "string") throw new Error("--name is required");
@@ -83,10 +83,11 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		return;
 	}
 
-	// sd tpl step add <template-id> --title "..." [--type task] [--priority 2]
+	// luuna-missions tpl step add <template-id> --title "..." [--type task] [--priority 2]
 	if (subcmd === "step") {
 		const stepSubcmd = positional[1];
-		if (stepSubcmd !== "add") throw new Error("Usage: sd tpl step add <id> --title ...");
+		if (stepSubcmd !== "add")
+			throw new Error("Usage: luuna-missions tpl step add <id> --title ...");
 		const templateId = positional[2];
 		if (!templateId) throw new Error("Template ID is required");
 		const title = flags.title;
@@ -122,7 +123,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		return;
 	}
 
-	// sd tpl list
+	// luuna-missions tpl list
 	if (subcmd === "list") {
 		const templates = await readTemplates(dir);
 		if (jsonMode) {
@@ -139,10 +140,10 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		return;
 	}
 
-	// sd tpl show <id>
+	// luuna-missions tpl show <id>
 	if (subcmd === "show") {
 		const templateId = positional[1];
-		if (!templateId) throw new Error("Usage: sd tpl show <id>");
+		if (!templateId) throw new Error("Usage: luuna-missions tpl show <id>");
 		const templates = await readTemplates(dir);
 		const tpl = templates.find((t) => t.id === templateId);
 		if (!tpl) throw new Error(`Template not found: ${templateId}`);
@@ -161,10 +162,10 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		return;
 	}
 
-	// sd tpl pour <id> --prefix "..."
+	// luuna-missions tpl pour <id> --prefix "..."
 	if (subcmd === "pour") {
 		const templateId = positional[1];
-		if (!templateId) throw new Error("Usage: sd tpl pour <id> --prefix ...");
+		if (!templateId) throw new Error("Usage: luuna-missions tpl pour <id> --prefix ...");
 		if (typeof flags.prefix !== "string") throw new Error("--prefix is required");
 		const prefix = flags.prefix;
 
@@ -226,10 +227,10 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		return;
 	}
 
-	// sd tpl status <id>
+	// luuna-missions tpl status <id>
 	if (subcmd === "status") {
 		const templateId = positional[1];
-		if (!templateId) throw new Error("Usage: sd tpl status <id>");
+		if (!templateId) throw new Error("Usage: luuna-missions tpl status <id>");
 
 		const issues = await readIssues(dir);
 		const convoyIssues = issues.filter((i: Issue) => i.convoy === templateId);

@@ -1,5 +1,5 @@
-// Per-section prior_art enrichment via `ml query` shell-out.
-// PLAN_SPEC.md:344-352. Soft coupling: any failure (ml absent, query failure,
+// Per-section prior_art enrichment via `luuna-atlas query` shell-out.
+// PLAN_SPEC.md:344-352. Soft coupling: any failure (luuna-atlas absent, query failure,
 // malformed output) produces empty prior_art arrays — never throws, never logs
 // to stderr.
 
@@ -12,13 +12,13 @@ export interface PriorArtEntry {
 
 interface SectionRequest {
 	name: string;
-	mulchSource?: string;
+	atlasSource?: string;
 }
 
 const PRIOR_ART_LIMIT = 5;
 
 // PLAN_SPEC.md:349 — well-known section names map to record types when no
-// `mulch_source:` hint is present on the section spec.
+// `atlas_source:` hint is present on the section spec.
 const WELL_KNOWN_SECTION_TYPES: Record<string, string[]> = {
 	approach: ["pattern", "decision"],
 	risks: ["failure"],
@@ -37,7 +37,7 @@ export interface EnrichOptions {
 }
 
 // Returns prior_art entries keyed by section name. Sections that do not opt
-// into mulch enrichment still appear in the map with an empty array, so the
+// into luuna-atlas enrichment still appear in the map with an empty array, so the
 // caller can do a flat lookup without checking presence.
 export function enrichPriorArt(opts: EnrichOptions): Record<string, PriorArtEntry[]> {
 	const out: Record<string, PriorArtEntry[]> = {};
@@ -46,15 +46,15 @@ export function enrichPriorArt(opts: EnrichOptions): Record<string, PriorArtEntr
 	if (!opts.domain) return out;
 
 	const cwd = opts.cwd ?? process.cwd();
-	const ml = Bun.which("ml", { PATH: process.env.PATH });
-	if (!ml) return out;
+	const atlas = Bun.which("luuna-atlas", { PATH: process.env.PATH });
+	if (!atlas) return out;
 
 	for (const s of opts.sections) {
-		const types = typesForSection(s.name, s.mulchSource);
+		const types = typesForSection(s.name, s.atlasSource);
 		if (types.length === 0) continue;
 		const collected: PriorArtEntry[] = [];
 		for (const t of types) {
-			const entries = queryMulchRecords({ ml, domain: opts.domain, type: t, cwd });
+			const entries = queryAtlasRecords({ atlas, domain: opts.domain, type: t, cwd });
 			collected.push(...entries);
 		}
 		out[s.name] = collected.slice(0, PRIOR_ART_LIMIT);
@@ -63,22 +63,25 @@ export function enrichPriorArt(opts: EnrichOptions): Record<string, PriorArtEntr
 }
 
 interface QueryArgs {
-	ml: string;
+	atlas: string;
 	domain: string;
 	type: string;
 	cwd: string;
 }
 
-function queryMulchRecords(args: QueryArgs): PriorArtEntry[] {
+function queryAtlasRecords(args: QueryArgs): PriorArtEntry[] {
 	try {
-		// The actual mulch CLI takes domain positionally and lifts --json to the
-		// top-level (`ml --json query <domain>`), not `ml query --domain` as the
-		// spec text describes. Parse what mulch actually emits.
-		const result = Bun.spawnSync([args.ml, "--json", "query", args.domain, "--type", args.type], {
-			cwd: args.cwd,
-			stdout: "pipe",
-			stderr: "pipe",
-		});
+		// The actual luuna-atlas CLI takes domain positionally and lifts --json to the
+		// top-level (`luuna-atlas --json query <domain>`), not `luuna-atlas query --domain` as the
+		// spec text describes. Parse what luuna-atlas actually emits.
+		const result = Bun.spawnSync(
+			[args.atlas, "--json", "query", args.domain, "--type", args.type],
+			{
+				cwd: args.cwd,
+				stdout: "pipe",
+				stderr: "pipe",
+			},
+		);
 		if ((result.exitCode ?? 0) !== 0) return [];
 		const stdout = new TextDecoder().decode(result.stdout);
 		return parseQueryOutput(stdout, args.type);
@@ -114,7 +117,7 @@ function parseQueryOutput(stdout: string, type: string): PriorArtEntry[] {
 		if (!id) continue;
 		const recType = stringField(rec, "type") ?? type;
 		const summary = summarize(rec);
-		// Relevance synthesized from rank: ml's CLI surface doesn't expose a
+		// Relevance synthesized from rank: luuna-atlas's CLI surface doesn't expose a
 		// score, so we rank by emit order (top hit = highest relevance).
 		const relevance = Number(((PRIOR_ART_LIMIT - i) / PRIOR_ART_LIMIT).toFixed(2));
 		out.push({ id, type: recType, summary, relevance });
@@ -142,23 +145,23 @@ export interface RecordDecisionOptions {
 export interface RecordDecisionResult {
 	ok: boolean;
 	reason?: string;
-	mulchId?: string;
+	atlasId?: string;
 }
 
 export function recordDecision(opts: RecordDecisionOptions): RecordDecisionResult {
 	const cwd = opts.cwd ?? process.cwd();
-	const ml = Bun.which("ml", { PATH: process.env.PATH });
-	if (!ml) {
-		return { ok: false, reason: "ml not found on PATH; skipping --record-decision" };
+	const atlas = Bun.which("luuna-atlas", { PATH: process.env.PATH });
+	if (!atlas) {
+		return { ok: false, reason: "luuna-atlas not found on PATH; skipping --record-decision" };
 	}
 	try {
-		// `ml record decision` requires --title in addition to the spec args; pass
+		// `luuna-atlas record decision` requires --title in addition to the spec args; pass
 		// the seed title so the recorded decision has a meaningful name. --json
 		// is appended (not prepended) so existing fixture parsers that key off
 		// argv[0] === "record" keep working.
 		const result = Bun.spawnSync(
 			[
-				ml,
+				atlas,
 				"record",
 				opts.domain,
 				"--type",
@@ -167,7 +170,7 @@ export function recordDecision(opts: RecordDecisionOptions): RecordDecisionResul
 				opts.title,
 				"--rationale",
 				opts.approach,
-				"--evidence-seeds",
+				"--evidence-missions",
 				opts.planId,
 				"--json",
 			],
@@ -176,23 +179,23 @@ export function recordDecision(opts: RecordDecisionOptions): RecordDecisionResul
 		if ((result.exitCode ?? 0) !== 0) {
 			const stderr = new TextDecoder().decode(result.stderr).trim();
 			const detail = stderr ? `: ${stderr.split("\n")[0]}` : "";
-			return { ok: false, reason: `ml record failed${detail}` };
+			return { ok: false, reason: `luuna-atlas record failed${detail}` };
 		}
 		const stdout = new TextDecoder().decode(result.stdout).trim();
-		let mulchId: string | undefined;
+		let atlasId: string | undefined;
 		if (stdout.length > 0) {
 			try {
 				const parsed = JSON.parse(stdout) as { record?: { id?: unknown } };
 				const id = parsed?.record?.id;
-				if (typeof id === "string" && id.length > 0) mulchId = id;
+				if (typeof id === "string" && id.length > 0) atlasId = id;
 			} catch {
-				// Older mulch versions or non-JSON output: still success, just
+				// Older luuna-atlas versions or non-JSON output: still success, just
 				// no id to surface.
 			}
 		}
-		return mulchId ? { ok: true, mulchId } : { ok: true };
+		return atlasId ? { ok: true, atlasId } : { ok: true };
 	} catch (e) {
-		return { ok: false, reason: `ml record threw: ${(e as Error).message}` };
+		return { ok: false, reason: `luuna-atlas record threw: ${(e as Error).message}` };
 	}
 }
 

@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { applyIssueFilters, filterOptionsFromFlags, parseLimitFlag } from "../filter.ts";
 import { resolveFormat, stripAnsi, VALID_FORMATS } from "../format.ts";
 import {
@@ -52,7 +52,7 @@ function parseArgs(args: string[]) {
 	return flags;
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const fmt = resolveFormat(args);
 	const jsonMode = fmt.mode === "json";
 	if (fmt.error) {
@@ -103,7 +103,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 		return;
 	}
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	const allIssues = await readIssues(dir);
 	const closedBlockerIds = new Set(
 		allIssues.filter((i: Issue) => i.status === "closed").map((i) => i.id),

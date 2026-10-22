@@ -3,7 +3,7 @@ import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { findSeedsDir, isInsideWorktree } from "./config";
+import { findMissionsDir, isInsideWorktree } from "./config";
 
 function git(args: string[], cwd: string): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
@@ -13,43 +13,43 @@ function git(args: string[], cwd: string): void {
 	}
 }
 
-function initSeedsDir(root: string): void {
-	const seedsDir = join(root, ".seeds");
-	mkdirSync(seedsDir, { recursive: true });
-	writeFileSync(join(seedsDir, "config.yaml"), 'project: "test"\nversion: "1"\n');
-	writeFileSync(join(seedsDir, "issues.jsonl"), "");
+function initMissionsDir(root: string): void {
+	const missionsDir = join(root, ".luuna/missions");
+	mkdirSync(missionsDir, { recursive: true });
+	writeFileSync(join(missionsDir, "config.yaml"), 'project: "test"\nversion: "1"\n');
+	writeFileSync(join(missionsDir, "issues.jsonl"), "");
 }
 
 let tmpDir: string;
 
 beforeEach(async () => {
-	tmpDir = realpathSync.native(await mkdtemp(join(tmpdir(), "seeds-config-test-")));
+	tmpDir = realpathSync.native(await mkdtemp(join(tmpdir(), "missions-config-test-")));
 });
 
 afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("findSeedsDir — worktree resolution", () => {
+describe("findMissionsDir — worktree resolution", () => {
 	test("resolves to main root from a worktree", async () => {
 		const mainRepo = join(tmpDir, "main");
 		mkdirSync(mainRepo);
 		git(["init"], mainRepo);
 		git(["config", "user.email", "test@test.com"], mainRepo);
 		git(["config", "user.name", "Test"], mainRepo);
-		initSeedsDir(mainRepo);
+		initMissionsDir(mainRepo);
 		git(["add", "."], mainRepo);
 		git(["commit", "-m", "init"], mainRepo);
 
 		const wtDir = join(tmpDir, "wt");
 		git(["worktree", "add", wtDir, "-b", "wt-branch"], mainRepo);
 
-		// worktree also gets .seeds/ via the branch content
-		const result = await findSeedsDir(wtDir);
-		expect(result).toBe(join(mainRepo, ".seeds"));
+		// worktree also gets .luuna/missions/ via the branch content
+		const result = await findMissionsDir(wtDir);
+		expect(result).toBe(join(mainRepo, ".luuna/missions"));
 	});
 
-	test("falls back to worktree .seeds/ when main root has none", async () => {
+	test("falls back to worktree .luuna/missions/ when main root has none", async () => {
 		const mainRepo = join(tmpDir, "main");
 		mkdirSync(mainRepo);
 		git(["init"], mainRepo);
@@ -62,30 +62,30 @@ describe("findSeedsDir — worktree resolution", () => {
 		const wtDir = join(tmpDir, "wt");
 		git(["worktree", "add", wtDir, "-b", "wt-branch"], mainRepo);
 
-		// Only init .seeds/ in worktree, NOT in main
-		initSeedsDir(wtDir);
+		// Only init .luuna/missions/ in worktree, NOT in main
+		initMissionsDir(wtDir);
 
-		const result = await findSeedsDir(wtDir);
-		expect(result).toBe(join(wtDir, ".seeds"));
+		const result = await findMissionsDir(wtDir);
+		expect(result).toBe(join(wtDir, ".luuna/missions"));
 	});
 
 	test("no-op when in main repo (not a worktree)", async () => {
 		const mainRepo = join(tmpDir, "main");
 		mkdirSync(mainRepo);
 		git(["init"], mainRepo);
-		initSeedsDir(mainRepo);
+		initMissionsDir(mainRepo);
 
-		const result = await findSeedsDir(mainRepo);
-		expect(result).toBe(join(mainRepo, ".seeds"));
+		const result = await findMissionsDir(mainRepo);
+		expect(result).toBe(join(mainRepo, ".luuna/missions"));
 	});
 
 	test("no-op when not in a git repo", async () => {
 		const plainDir = join(tmpDir, "plain");
 		mkdirSync(plainDir);
-		initSeedsDir(plainDir);
+		initMissionsDir(plainDir);
 
-		const result = await findSeedsDir(plainDir);
-		expect(result).toBe(join(plainDir, ".seeds"));
+		const result = await findMissionsDir(plainDir);
+		expect(result).toBe(join(plainDir, ".luuna/missions"));
 	});
 });
 
