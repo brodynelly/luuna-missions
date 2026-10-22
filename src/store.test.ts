@@ -107,7 +107,7 @@ describe("readIssues", () => {
 					at: "2026-05-10T16:57:24.830Z",
 					ok: false,
 				},
-				tags: ["cron", "warren"],
+				tags: ["cron", "example"],
 				notes: null,
 			},
 		});

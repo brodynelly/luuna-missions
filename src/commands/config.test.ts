@@ -48,7 +48,7 @@ describe("luuna-missions config schema", () => {
 		expect(Object.keys(defs).sort()).toEqual(["PlanTemplate", "SectionSpec"].sort());
 	});
 
-	test("golden: schema property keys are stable (warren wire format)", () => {
+	test("golden: schema property keys are stable (wire format)", () => {
 		const schema = configSchema();
 		const props = schema.properties as Record<string, Record<string, unknown>>;
 

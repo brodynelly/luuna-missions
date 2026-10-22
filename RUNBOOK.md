@@ -219,7 +219,7 @@ npm deprecate @luuna/missions-cli@X.Y.Z \
 - Add a banner to the `vX.Y.Z` GitHub release notes pointing at the
   fixed version.
 - Update the `missions-XXXX` tracker with root cause + remediation links.
-- If a downstream consumer (warren, overstory) pinned the bad version,
+- If a downstream consumer (for example an orchestrator) pinned the bad version,
   open an issue there recommending the upgrade.
 
 ## Appendix — Common commands

@@ -2,11 +2,11 @@
 
 Git-native issue tracker for AI agent workflows. Zero dependencies, JSONL storage, Bun runtime.
 
-Replaces [beads](https://github.com/steveyegge/beads) in the overstory and Luuna Atlas ecosystem with something purpose-built: no Dolt, no daemon, no binary DB files. The JSONL file IS the database.
+Replaces [beads](https://github.com/steveyegge/beads) in the Luuna ecosystem with something purpose-built: no Dolt, no daemon, no binary DB files. The JSONL file IS the database.
 
 ## Why
 
-Beads works but carries baggage overstory doesn't need:
+Beads works but carries baggage an orchestrator does not need:
 
 - **2.8MB binary `beads.db`** (Dolt-embedded) that can't diff or merge in git
 - **286 export-state tracking files** to keep JSONL in sync with the binary DB
@@ -14,7 +14,7 @@ Beads works but carries baggage overstory doesn't need:
 - **Concurrent access contention** — multiple agents fighting over `beads.db` lock
 - **Dual source of truth** — binary DB + JSONL export, manually kept in sync
 
-Overstory uses ~7 beads operations on a simple data model. Missions covers exactly that surface.
+Orchestrators use ~7 beads operations on a simple data model. Missions covers exactly that surface.
 
 ## Design Principles
 
@@ -22,13 +22,13 @@ Overstory uses ~7 beads operations on a simple data model. Missions covers exact
 2. **Zero runtime dependencies.** Bun built-ins only (`Bun.file`, `Bun.write`, `node:fs`, `node:crypto`).
 3. **Concurrent-safe by default.** Advisory file locks + atomic writes. Multiple agents in worktrees can read/write safely.
 4. **Git-native.** `merge=union` gitattribute handles parallel branch merges. No custom merge driver needed.
-5. **Ecosystem fit.** Same stack as overstory (Bun/TS), same patterns as Luuna Atlas (JSONL + locks), same CLI conventions (`--json` flag on everything).
+5. **Ecosystem fit.** Same stack as the Luuna runtime tooling (Bun/TS), same patterns as Luuna Atlas (JSONL + locks), same CLI conventions (`--json` flag on everything).
 
 ## On-Disk Format
 
 ```
 .luuna/missions/
-  config.yaml          # Project config (YAML, matches overstory and Luuna Atlas convention)
+  config.yaml          # Project config (YAML, matches Luuna Atlas convention)
   issues.jsonl         # All issues, one JSON object per line
   templates.jsonl      # Molecule/template definitions
   .gitignore           # Ignores lock files
@@ -37,11 +37,11 @@ Overstory uses ~7 beads operations on a simple data model. Missions covers exact
 ### config.yaml
 
 ```yaml
-project: overstory
+project: example-app
 version: "1"
 ```
 
-The `project` field is used as the ID prefix (e.g., `overstory-a1b2`).
+The `project` field is used as the ID prefix (e.g., `example-app-a1b2`).
 
 YAML parsed by a minimal built-in subset parser (~50 LOC) that handles the flat key-value format missions needs. No external dependency.
 
@@ -50,8 +50,8 @@ YAML parsed by a minimal built-in subset parser (~50 LOC) that handles the flat 
 One issue per line, append-only by default. Mutations (update, close) rewrite the file atomically (temp file + rename) under an advisory lock.
 
 ```jsonl
-{"id":"overstory-a1b2","title":"Add retry logic to mail client","status":"open","type":"task","priority":2,"createdAt":"2026-02-21T10:00:00Z","updatedAt":"2026-02-21T10:00:00Z"}
-{"id":"overstory-c3d4","title":"Dashboard crashes on empty run","status":"in_progress","type":"bug","priority":1,"assignee":"builder-1","createdAt":"2026-02-21T10:05:00Z","updatedAt":"2026-02-21T10:30:00Z"}
+{"id":"example-app-a1b2","title":"Add retry logic to mail client","status":"open","type":"task","priority":2,"createdAt":"2026-02-21T10:00:00Z","updatedAt":"2026-02-21T10:00:00Z"}
+{"id":"example-app-c3d4","title":"Dashboard crashes on empty run","status":"in_progress","type":"bug","priority":1,"assignee":"builder-1","createdAt":"2026-02-21T10:05:00Z","updatedAt":"2026-02-21T10:30:00Z"}
 ```
 
 ### templates.jsonl
@@ -84,7 +84,7 @@ Union merge strategy: on branch merge, git takes lines from both sides. Since ea
 ```typescript
 interface Issue {
   // Identity
-  id: string;                  // "{project}-{4hex}", e.g. "overstory-a1b2"
+  id: string;                  // "{project}-{4hex}", e.g. "example-app-a1b2"
 
   // Core
   title: string;
@@ -141,7 +141,7 @@ interface ConvoyStatus {
 
 ### ID Generation
 
-- Issues: `{project}-{4 random hex chars}` (e.g., `overstory-e7f3`)
+- Issues: `{project}-{4 random hex chars}` (e.g., `example-app-e7f3`)
 - Templates: `tpl-{4 random hex chars}` (e.g., `tpl-b2c9`)
 - Collision-checked against existing entries on create
 - Falls back to 8 hex chars after 100 collisions (won't happen in practice)
@@ -242,7 +242,7 @@ luuna-missions tpl status <template-id>            Show convoy status (completio
 
 Success:
 ```json
-{ "success": true, "command": "create", "id": "overstory-a1b2" }
+{ "success": true, "command": "create", "id": "example-app-a1b2" }
 ```
 
 Error:
@@ -257,7 +257,7 @@ List results:
 
 Template pour:
 ```json
-{ "success": true, "command": "tpl pour", "ids": ["overstory-a1b2", "overstory-c3d4", "overstory-e5f6"] }
+{ "success": true, "command": "tpl pour", "ids": ["example-app-a1b2", "example-app-c3d4", "example-app-e5f6"] }
 ```
 
 ## Concurrency Model
@@ -313,11 +313,11 @@ One-time migration script: `luuna-missions migrate-from-beads`
 
 The beads JSONL export is the source — no need to touch `beads.db`.
 
-## Integration with Overstory
+## Integration with orchestrators
 
 ### Client Interface
 
-Overstory wraps missions the same way it wraps beads — via `Bun.spawn(["luuna-missions", ...])` with `--json` parsing. The `BeadsClient` interface maps 1:1:
+An orchestrator can wrap missions the same way it wraps beads — via `Bun.spawn(["luuna-missions", ...])` with `--json` parsing. The `BeadsClient` interface maps 1:1:
 
 | BeadsClient method | luuna-missions command |
 |--------------------|------------|
@@ -388,13 +388,13 @@ Explicitly out of scope (keep it minimal):
 
 | Concern | Choice | Rationale |
 |---------|--------|-----------|
-| Runtime | Bun | Matches overstory, runs TS directly |
-| Language | TypeScript (strict) | Matches overstory and Luuna Atlas |
-| Dependencies | Zero runtime | Matches overstory's hard rule |
-| Config | YAML (minimal built-in parser) | Matches overstory and Luuna Atlas convention |
+| Runtime | Bun | Matches example-app, runs TS directly |
+| Language | TypeScript (strict) | Matches Luuna Atlas |
+| Dependencies | Zero runtime | Matches the project hard rule |
+| Config | YAML (minimal built-in parser) | Matches Luuna Atlas convention |
 | Storage | JSONL | Git-native, diffable, mergeable |
 | Locking | Advisory file locks | Proven in Luuna Atlas for multi-agent |
-| Formatting | Biome (tabs, 100 char width) | Matches overstory |
+| Formatting | Biome (tabs, 100 char width) | Matches the Luuna stack |
 | Testing | `bun test` (colocated) | Real I/O, no mocks |
 | Distribution | `bun link` locally | No npm publish for now |
 
@@ -487,7 +487,7 @@ Script updates both files atomically and prints next steps.
 
 ### /release Slash Command
 
-`.claude/commands/release.md` — identical workflow to overstory:
+`.claude/commands/release.md` — standard release workflow:
 
 1. Analyze changes since last release (`git log`, `git diff`)
 2. Determine version bump (major/minor/patch, default: patch)

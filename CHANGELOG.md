@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Removed references to unrelated upstream ecosystem tools from comments, schema descriptions, specs and test fixtures. Wording only; no CLI or JSON contract changes.
+
 ### Fixed
 - `luuna-missions guard` and `luuna-missions plan submit --plan -` read piped stdin on Windows. `Bun.stdin.text()` let the process exit 0 before the read finished, so `guard` allowed every edit and `plan submit` did nothing.
 

@@ -30,7 +30,7 @@ export interface CreateLogOptions {
 
 // Paths whose values never belong in logs. Bare keys cover top-level fields;
 // `*.<key>` wildcards cover one level of nesting (e.g. `req.token`). Mirrors
-// burrow's redact policy. Documented in AGENTS.md (redact policy).
+// the standard redact policy. Documented in AGENTS.md (redact policy).
 export const REDACT_PATHS: readonly string[] = [
 	"password",
 	"token",

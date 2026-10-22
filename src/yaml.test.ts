@@ -3,8 +3,8 @@ import { parseYaml, stringifyYaml, type YamlValue } from "./yaml";
 
 describe("parseYaml — flat (legacy)", () => {
 	test("parses simple key-value pairs", () => {
-		const result = parseYaml('project: overstory\nversion: "1"');
-		expect(result.project).toBe("overstory");
+		const result = parseYaml('project: example-app\nversion: "1"');
+		expect(result.project).toBe("example-app");
 		expect(result.version).toBe("1");
 	});
 
@@ -41,9 +41,9 @@ describe("parseYaml — flat (legacy)", () => {
 	});
 
 	test("parses config.yaml format used by missions", () => {
-		const yaml = 'project: overstory\nversion: "1"';
+		const yaml = 'project: example-app\nversion: "1"';
 		const result = parseYaml(yaml);
-		expect(result).toEqual({ project: "overstory", version: "1" });
+		expect(result).toEqual({ project: "example-app", version: "1" });
 	});
 
 	test("handles values with colons in quoted strings", () => {
@@ -188,7 +188,7 @@ describe("parseYaml — flow maps", () => {
 describe("parseYaml — full plan_templates block (PLAN_SPEC.md:36-78)", () => {
 	test("round-trips the full feature template", () => {
 		const yaml = [
-			"project: overstory",
+			"project: example-app",
 			'version: "1"',
 			"",
 			"plan_templates:",
@@ -214,7 +214,7 @@ describe("parseYaml — full plan_templates block (PLAN_SPEC.md:36-78)", () => {
 			"        min: 1",
 		].join("\n");
 		const result = parseYaml(yaml);
-		expect(result.project).toBe("overstory");
+		expect(result.project).toBe("example-app");
 		expect(result.version).toBe("1");
 		const tpl = (result.plan_templates as Record<string, YamlValue>).feature as Record<
 			string,
@@ -245,7 +245,7 @@ describe("stringifyYaml", () => {
 	});
 
 	test("round-trips flat objects", () => {
-		const original = { project: "overstory", version: "1" };
+		const original = { project: "example-app", version: "1" };
 		const yaml = stringifyYaml(original);
 		const parsed = parseYaml(yaml);
 		expect(parsed).toEqual(original);
