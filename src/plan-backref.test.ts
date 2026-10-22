@@ -15,7 +15,7 @@ describe("buildPlanBackref", () => {
 			parentSeedId: "missions-7c84",
 			parentSeedTitle: "Add OAuth2 device-flow authentication",
 			templateName: "feature",
-			approach: "Hardcoded TS template + AJV schema, mirroring mulch's custom_types.",
+			approach: "Hardcoded TS template + AJV schema, mirroring luuna-atlas's custom_types.",
 		});
 		expect(out).toContain(BACKREF_START);
 		expect(out).toContain(BACKREF_END);

@@ -22,3 +22,4 @@ The owner requested the explicit luuna-* repository names on October 21, 2026. G
 - Removed bin aliases `sd` and `seeds`; use `luuna-missions` or `lm`. Re-run `luuna-missions setup claude` to refresh hook commands (older `sd prime` / `sd guard` hooks are replaced).
 - Environment variables: `SEEDS_DEBUG` and `SEEDS_LOG_LEVEL` are now `LUUNA_MISSIONS_DEBUG` and `LUUNA_MISSIONS_LOG_LEVEL`. The old names are no longer read.
 - Onboard and plan-backref markers changed from `seeds:*` / `seeds-onboard-*` to `missions:*` / `missions-onboard-*`; existing sections are re-written by `onboard`.
+- Plan-template section key `mulch_source` in `config.yaml` is now `atlas_source`; the old key is still accepted and is rewritten when the config is saved with `luuna-missions config set`. Prior-art enrichment and `--record-decision` call `luuna-atlas` instead of `ml`.

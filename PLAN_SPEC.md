@@ -13,8 +13,8 @@ Most human and agent attention should be spent in the planning step, not the rev
 1. **Structured data, not prose.** Plans are JSONL rows with validated fields. No markdown plan documents anywhere in the artifact path. The plan is queryable, validatable, mechanically traversable.
 2. **Plans are first-class.** Plans get their own ID space and their own JSONL file, parallel to issues. They are not a field on a seed.
 3. **Bidirectional linking.** Plans know their parent seed and their spawned children; missions know their plan. Navigation is cheap from either direction.
-4. **Config-declared templates.** Customization mirrors mulch's `custom_types`: declare plan templates in `.luuna/missions/config.yaml` with required/optional sections and validation. AJV schema generated from the template definition.
-5. **Soft mulch coupling.** `luuna-missions plan` works standalone. If `ml` is on PATH, prior art (conventions, patterns, decisions, failures) is injected into the planning prompt automatically. Mulch absent → planning still works.
+4. **Config-declared templates.** Customization mirrors Luuna Atlas's `custom_types`: declare plan templates in `.luuna/missions/config.yaml` with required/optional sections and validation. AJV schema generated from the template definition.
+5. **Soft Luuna Atlas coupling.** `luuna-missions plan` works standalone. If `luuna-atlas` is on PATH, prior art (conventions, patterns, decisions, failures) is injected into the planning prompt automatically. Atlas absent → planning still works.
 6. **One-shot with resume.** The LLM receives a structured prompt, produces a complete plan JSON, and submits it. Validation failure returns a patchable partial-state diff — no multi-turn state machine required.
 7. **Decomposable, recursively.** A plan step may itself be another plan. Epics decompose into nested plans without context-switching to a different tool.
 
@@ -67,8 +67,8 @@ plan_templates:
         required: false
         kind: list
         item: text
-        mulch_source: failure
-        prompt: "What could go wrong? Known failure modes from prior work are pre-filled when mulch is available."
+        atlas_source: failure
+        prompt: "What could go wrong? Known failure modes from prior work are pre-filled when Luuna Atlas is available."
       acceptance:
         required: true
         kind: list
@@ -86,7 +86,7 @@ Section field reference:
 | `min_length`    | For `kind: text` — minimum character count.                                                          |
 | `min`           | For `kind: list` or `kind: steps` — minimum number of entries.                                       |
 | `item`          | For `kind: list` — schema for each entry. Either `text` or a structured object.                      |
-| `mulch_source`  | When mulch is present, pre-populate this section's `prior_art` from records of this type.            |
+| `atlas_source`  | When Luuna Atlas is present, pre-populate this section's `prior_art` from records of this type.            |
 | `prompt`        | The natural-language prompt the LLM sees when filling this section.                                 |
 
 ### plans.jsonl
@@ -136,7 +136,7 @@ Optional human review gate is **suggested, not enforced** (see Reviewer Suggesti
 ```
 luuna-missions plan prompt   <seed-id> [--template <name>] [--domain <name>]
                                                        Print structured prompt JSON to stdout.
-                                                       Embeds mulch prior_art when ml is on PATH.
+                                                       Embeds Luuna Atlas prior_art when Luuna Atlas is on PATH.
 
 luuna-missions plan submit   <seed-id> --plan <file> [--overwrite]
                                                        Validate plan JSON, spawn children, write
@@ -196,7 +196,7 @@ Hybrid: one-shot with resume on validation failure.
 ```bash
 $ luuna-missions plan prompt missions-9c4d --template feature > plan.json
 # stdout is the structured prompt: sections, prompts, validation rules,
-# and prior_art populated from mulch where mulch_source matched.
+# and prior_art populated from Luuna Atlas where atlas_source matched.
 
 # LLM fills plan.json with answers under sections.
 
@@ -342,7 +342,7 @@ plan_templates:
         prompt: "Optional: tasks if the spike confirms the hypothesis."
 ```
 
-Validation is generated from the template config the same way mulch generates AJV schemas from `custom_types`.
+Validation is generated from the template config the same way Luuna Atlas generates AJV schemas from `custom_types`.
 
 ## Default `feature` Template
 
@@ -352,7 +352,7 @@ Six sections:
 2. **approach** *(required, text)* — Chosen approach with rationale.
 3. **alternatives** *(optional, list)* — Considered + rejected.
 4. **steps** *(required, steps, min 2)* — Decomposition; each becomes a child seed.
-5. **risks** *(optional, list, mulch_source: failure)* — Known failure modes.
+5. **risks** *(optional, list, atlas_source: failure)* — Known failure modes.
 6. **acceptance** *(required, list, min 1)* — Verifiable completion conditions.
 
 `out_of_scope` and `open_questions` are deliberately omitted from the default. They are workflow-specific and easy to add via custom templates.
@@ -374,19 +374,19 @@ Bidirectional linking is preserved: the sub-plan's `seed` field points at the sp
 
 A child seed marked `requires_plan: true` is excluded from `luuna-missions ready` until its sub-plan reaches `approved`. This guarantees no implementation begins on un-planned epic branches.
 
-## Mulch Integration (Soft)
+## Atlas Integration (Soft)
 
-When `ml` is resolvable on PATH, `luuna-missions plan prompt` enriches the prompt JSON with prior art:
+When `luuna-atlas` is resolvable on PATH, `luuna-missions plan prompt` enriches the prompt JSON with prior art:
 
-1. **Domain inference** — explicit `--domain` flag → seed labels matching declared mulch domains → directory anchors derived from `git diff --name-only` against the seed's referenced files.
-2. **Per-section enrichment** — for any section with a `mulch_source: <type>` hint (or for sections matching well-known names: `approach` ↔ pattern + decision; `risks` ↔ failure; `acceptance` ↔ guide), missions shells out to `ml query --domain <name> --type <type> --json --limit 5` (or calls the programmatic API exported from `mulch/src/api.ts`).
+1. **Domain inference** — explicit `--domain` flag → seed labels matching declared Luuna Atlas domains → directory anchors derived from `git diff --name-only` against the seed's referenced files.
+2. **Per-section enrichment** — for any section with a `atlas_source: <type>` hint (or for sections matching well-known names: `approach` ↔ pattern + decision; `risks` ↔ failure; `acceptance` ↔ guide), missions shells out to `luuna-atlas query --domain <name> --type <type> --json --limit 5` (or calls the programmatic API exported from `luuna-atlas/src/api.ts`).
 3. **Embedding** — top-N records become `prior_art` entries on the section: `[{id, type, summary, relevance}]`. The LLM is instructed to ground its answer in these entries when relevant.
 
-Mulch absent → `prior_art` arrays are empty, validation rules are unaffected, planning still works.
+Atlas absent → `prior_art` arrays are empty, validation rules are unaffected, planning still works.
 
 ### Optional outbound write
 
-`luuna-missions plan submit --record-decision` (off by default) calls `ml record <inferred-domain> --type decision --rationale <approach> --evidence-missions <plan-id>` on success. This back-fills the chosen approach as a mulch decision linked to the plan. Defaults to off so missions remains standalone.
+`luuna-missions plan submit --record-decision` (off by default) calls `luuna-atlas record <inferred-domain> --type decision --rationale <approach> --evidence-missions <plan-id>` on success. This back-fills the chosen approach as a Luuna Atlas decision linked to the plan. Defaults to off so missions remains standalone.
 
 ## Validation
 
@@ -587,16 +587,16 @@ The default optimizes for autonomous swarms; opt-in rigor for teams that need it
 
 - **Markdown plan documents.** Plans are structured data, not prose.
 - **Failure-feedback automation.** Plans don't auto-evolve templates from outcomes; that's workflow-specific and defers to teams.
-- **Canopy integration.** Planning prompts are not stored as canopy templates in V1.
+- **Beacon integration.** Planning prompts are not stored as Luuna Beacon templates in V1.
 - **Plan diffing UI.** Git diff of `plans.jsonl` is the V1 review surface.
 - **Cross-repo plans.** A plan lives in one `.luuna/missions/` instance; multi-repo coordination is out of scope.
 - **Real-time collaboration.** Same locking model as issues — atomic writes, last-write-wins on conflicts.
 
 ## Open Implementation Questions
 
-1. **Section schema vs. `custom_types` reuse.** Should `plan_templates` reuse mulch's `custom_types` AJV-schema-generation code (extract into a shared package), or maintain a parallel implementation in missions? Sharing reduces drift; keeping them separate keeps missions dependency-free.
+1. **Section schema vs. `custom_types` reuse.** Should `plan_templates` reuse Luuna Atlas's `custom_types` AJV-schema-generation code (extract into a shared package), or maintain a parallel implementation in missions? Sharing reduces drift; keeping them separate keeps missions dependency-free.
 2. **Step ID stability.** `--overwrite` diffing by step title is fragile. Should templates be able to declare stable `step_id` keys that survive title edits, at the cost of more author burden?
-3. **Mulch query interface.** Shell out to `ml query --json` (works today, language-agnostic) vs. import from `@os-eco/mulch-cli` programmatically (faster, tighter coupling, requires npm dep). Soft coupling argues for the shell route.
+3. **Atlas query interface.** Shell out to `luuna-atlas query --json` (works today, language-agnostic) vs. import from `@luuna/atlas-cli` programmatically (faster, tighter coupling, requires npm dep). Soft coupling argues for the shell route.
 4. **Default template inference.** Inferring template from seed `type` is convenient but couples the type taxonomy to template names. Should the mapping be configurable, or hard-coded to `task→feature, bug→bug, feature→feature, epic→feature` (with `--template` always overriding)?
 5. **Sub-plan depth.** Recursive nested plans risk runaway decomposition. Should there be a configurable `max_plan_depth` in `config.yaml` (default 3)?
 6. **Children lifecycle when parent plan moves to `done`.** If a plan is marked `done` but children are still open, is that a validation error, a warning, or allowed? Recommend: warning, not error, so plans can be retroactively closed without forcing child cleanup first.

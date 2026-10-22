@@ -83,7 +83,7 @@ export interface SectionSpec {
 	min_length?: number;
 	min?: number;
 	item?: "text" | Record<string, SectionSpec>;
-	mulch_source?: string;
+	atlas_source?: string;
 }
 
 export interface PlanTemplate {

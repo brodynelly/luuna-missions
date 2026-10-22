@@ -79,3 +79,24 @@ export function migrateLegacyLayout(projectRoot: string): boolean {
 export function upgradeLegacyMarkers(text: string): string {
 	return text.replace(/<!-- seeds(?=[:-])/g, "<!-- missions");
 }
+
+/**
+ * Rename Seeds/Mulch-era config keys in a parsed config tree: plan-template
+ * section key `mulch_source` is now `atlas_source`. An existing `atlas_source`
+ * wins. Returns a new tree; the input is not mutated.
+ */
+export function upgradeLegacyConfigKeys<T>(value: T): T {
+	if (Array.isArray(value)) return value.map((v) => upgradeLegacyConfigKeys(v)) as T;
+	if (typeof value !== "object" || value === null) return value;
+	const out: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+		if (k === "mulch_source") {
+			if (!("atlas_source" in (value as Record<string, unknown>))) {
+				out.atlas_source = upgradeLegacyConfigKeys(v);
+			}
+			continue;
+		}
+		out[k] = upgradeLegacyConfigKeys(v);
+	}
+	return out as T;
+}

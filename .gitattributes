@@ -1,5 +1,3 @@
-.mulch/expertise/*.jsonl merge=union
-
 .luuna/missions/issues.jsonl merge=union
 .luuna/missions/templates.jsonl merge=union
 .luuna/missions/plans.jsonl merge=union

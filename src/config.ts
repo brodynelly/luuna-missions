@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { migrateLegacyLayout } from "./legacy-layout.ts";
+import { migrateLegacyLayout, upgradeLegacyConfigKeys } from "./legacy-layout.ts";
 import type { Config, PlanTemplate, SectionSpec } from "./types.ts";
 import { CONFIG_FILE, DEFAULT_MAX_PLAN_DEPTH, MISSIONS_DIR, SECTION_KINDS } from "./types.ts";
 import { parseYaml, type YamlValue } from "./yaml.ts";
@@ -144,9 +144,9 @@ export const BUILTIN_FEATURE_TEMPLATE: PlanTemplate = {
 			required: false,
 			kind: "list",
 			item: "text",
-			mulch_source: "failure",
+			atlas_source: "failure",
 			prompt:
-				"What could go wrong? Known failure modes from prior work are pre-filled when mulch is available.",
+				"What could go wrong? Known failure modes from prior work are pre-filled when luuna-atlas is available.",
 		},
 		acceptance: {
 			required: true,
@@ -263,7 +263,7 @@ export async function loadPlanTemplates(
 		return { ...BUILTIN_PLAN_TEMPLATES };
 	}
 	const content = await file.text();
-	const data = parseYaml(content);
+	const data = upgradeLegacyConfigKeys(parseYaml(content));
 	const userBlock = data.plan_templates;
 	const builtins: Record<string, PlanTemplate> = { ...BUILTIN_PLAN_TEMPLATES };
 	if (!isPlainObject(userBlock)) return builtins;
@@ -311,7 +311,7 @@ function parseSectionSpec(raw: YamlValue, path: string): SectionSpec {
 	if (typeof raw.min_length === "number") spec.min_length = raw.min_length;
 	if (typeof raw.min === "number") spec.min = raw.min;
 	if (raw.item !== undefined) spec.item = parseItem(raw.item, `${path}.item`);
-	if (typeof raw.mulch_source === "string") spec.mulch_source = raw.mulch_source;
+	if (typeof raw.atlas_source === "string") spec.atlas_source = raw.atlas_source;
 	return spec;
 }
 

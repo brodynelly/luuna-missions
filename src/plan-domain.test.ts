@@ -5,9 +5,9 @@ import { join } from "node:path";
 import { inferDomain } from "./plan-domain.ts";
 import type { Issue } from "./types.ts";
 
-// Each test gets a fresh tmpdir + bin/ on PATH containing a fake `ml` script
+// Each test gets a fresh tmpdir + bin/ on PATH containing a fake `luuna-atlas` script
 // whose behavior is controlled per-test. This isolates the helper from any
-// real mulch install on the developer's machine.
+// real luuna-atlas install on the developer's machine.
 
 let tmpDir: string;
 let binDir: string;
@@ -41,10 +41,10 @@ EOF
     exit ${exit}
     ;;
 esac
-echo "fake ml: unsupported args: $*" >&2
+echo "fake luuna-atlas: unsupported args: $*" >&2
 exit 99
 `;
-	const scriptPath = join(binDir, "ml");
+	const scriptPath = join(binDir, "luuna-atlas");
 	await writeFile(scriptPath, body);
 	await chmod(scriptPath, 0o755);
 }
@@ -63,8 +63,8 @@ function makeSeed(overrides: Partial<Issue> = {}): Issue {
 }
 
 describe("inferDomain", () => {
-	test("returns explicit domain without spawning ml", async () => {
-		// No fake ml on PATH — confirms no shell-out happens.
+	test("returns explicit domain without spawning luuna-atlas", async () => {
+		// No fake luuna-atlas on PATH — confirms no shell-out happens.
 		process.env.PATH = "/nonexistent-bin-only";
 		const result = inferDomain({
 			seed: makeSeed(),
@@ -75,21 +75,21 @@ describe("inferDomain", () => {
 		expect(result.source).toBe("explicit");
 	});
 
-	test("returns null when ml is not on PATH", () => {
+	test("returns null when luuna-atlas is not on PATH", () => {
 		process.env.PATH = "/nonexistent-bin-only";
 		const result = inferDomain({ seed: makeSeed({ labels: ["commands"] }), cwd: tmpDir });
 		expect(result.domain).toBeNull();
 		expect(result.source).toBe("none");
 	});
 
-	test("returns null when ml status exits non-zero", async () => {
+	test("returns null when luuna-atlas status exits non-zero", async () => {
 		await writeFakeMl({ statusJson: {}, statusExit: 1 });
 		const result = inferDomain({ seed: makeSeed({ labels: ["commands"] }), cwd: tmpDir });
 		expect(result.domain).toBeNull();
 		expect(result.source).toBe("none");
 	});
 
-	test("returns null when ml status emits unparseable output", async () => {
+	test("returns null when luuna-atlas status emits unparseable output", async () => {
 		await writeFakeMl({ statusJson: undefined });
 		const result = inferDomain({ seed: makeSeed({ labels: ["commands"] }), cwd: tmpDir });
 		expect(result.domain).toBeNull();

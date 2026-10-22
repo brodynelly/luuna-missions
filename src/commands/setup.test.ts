@@ -60,7 +60,7 @@ describe("luuna-missions setup claude", () => {
 				model: "opus",
 				hooks: {
 					SessionStart: [
-						{ hooks: [{ type: "command", command: "ml prime" }] },
+						{ hooks: [{ type: "command", command: "luuna-atlas prime" }] },
 						{ hooks: [{ type: "command", command: "luuna-missions prime" }] },
 					],
 				},
@@ -70,7 +70,7 @@ describe("luuna-missions setup claude", () => {
 		const s = await readSettings();
 		expect(s.model).toBe("opus");
 		expect((s.hooks as Record<string, unknown>).SessionStart).toEqual([
-			{ hooks: [{ type: "command", command: "ml prime" }] },
+			{ hooks: [{ type: "command", command: "luuna-atlas prime" }] },
 			{ hooks: [{ type: "command", command: "luuna-missions prime --compact" }] },
 		]);
 	});
@@ -85,7 +85,7 @@ describe("luuna-missions setup claude", () => {
 					SessionStart: [
 						{
 							hooks: [
-								{ type: "command", command: "ml prime" },
+								{ type: "command", command: "luuna-atlas prime" },
 								{ type: "command", command: "luuna-missions prime --compact" },
 							],
 						},
@@ -96,7 +96,7 @@ describe("luuna-missions setup claude", () => {
 		const { stdout } = await runCli(["setup", "claude", "--remove"], tmpDir);
 		expect(stdout).toContain("Removed missions hooks");
 		expect((await readSettings()).hooks).toEqual({
-			SessionStart: [{ hooks: [{ type: "command", command: "ml prime" }] }],
+			SessionStart: [{ hooks: [{ type: "command", command: "luuna-atlas prime" }] }],
 		});
 		const again = await runCli(["setup", "claude", "--remove", "--json"], tmpDir);
 		expect((JSON.parse(again.stdout) as { changed: boolean }).changed).toBe(false);

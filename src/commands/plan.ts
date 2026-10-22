@@ -3,9 +3,9 @@ import { Command } from "commander";
 import { findMissionsDir, loadPlanTemplates, readConfig } from "../config.ts";
 import { generateId } from "../id.ts";
 import { accent, brand, muted, outputJson, printSuccess } from "../output.ts";
+import { enrichPriorArt, recordDecision } from "../plan-atlas.ts";
 import { applyPlanBackref, buildPlanBackref, stripPlanBackref } from "../plan-backref.ts";
 import { inferDomain } from "../plan-domain.ts";
-import { enrichPriorArt, recordDecision } from "../plan-mulch.ts";
 import { compilePlanTemplate, defaultTemplateForType } from "../plan-schema.ts";
 import {
 	appendPlan,
@@ -37,7 +37,7 @@ export function register(program: Command): void {
 		.command("prompt <seed-id>")
 		.description("Emit structured planning prompt JSON for a seed")
 		.option("--template <name>", "Override the inferred template")
-		.option("--domain <name>", "Force the mulch domain used for prior_art enrichment")
+		.option("--domain <name>", "Force the luuna-atlas domain used for prior_art enrichment")
 		.option("--json", "Output as JSON")
 		.action(
 			async (seedId: string, opts: { template?: string; domain?: string; json?: boolean }) => {
@@ -55,9 +55,9 @@ export function register(program: Command): void {
 		)
 		.option(
 			"--record-decision",
-			"Best-effort: after success, record the chosen approach as a mulch decision",
+			"Best-effort: after success, record the chosen approach as a luuna-atlas decision",
 		)
-		.option("--domain <name>", "Force the mulch domain used for --record-decision")
+		.option("--domain <name>", "Force the luuna-atlas domain used for --record-decision")
 		.option(
 			"--name <text>",
 			"Human-readable plan label; overrides plan JSON 'name' and the seed-title default",
@@ -343,7 +343,7 @@ function buildPlanRequest(
 			required: s.required,
 			kind: s.kind,
 			prompt: s.prompt,
-			prior_art: [], // Phase 1: empty; Phase 3 fills from mulch
+			prior_art: [], // Phase 1: empty; Phase 3 fills from luuna-atlas
 		};
 		if (s.min_length !== undefined) out.min_length = s.min_length;
 		if (s.min !== undefined) out.min = s.min;
@@ -390,12 +390,12 @@ async function runPrompt(
 
 	const planRequest = buildPlanRequest(seedId, templateName, template);
 
-	// Phase 3: prior_art enrichment via mulch. Soft coupling — empty arrays
-	// when ml is absent or a domain cannot be inferred.
+	// Phase 3: prior_art enrichment via luuna-atlas. Soft coupling — empty arrays
+	// when luuna-atlas is absent or a domain cannot be inferred.
 	const { domain } = inferDomain({ seed, explicitDomain: domainOverride });
 	const sectionRequests = Object.entries(template.sections).map(([name, spec]) => ({
 		name,
-		mulchSource: spec.mulch_source,
+		atlasSource: spec.atlas_source,
 	}));
 	const priorArt = enrichPriorArt({ domain, sections: sectionRequests });
 	for (const section of planRequest.sections) {
@@ -605,7 +605,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 	let revision = 1;
 	let obsoleteChildren: Issue[] = [];
 	let aborted = false;
-	// Captured inside the lock so the post-success outbound mulch write has
+	// Captured inside the lock so the post-success outbound luuna-atlas write has
 	// access without re-reading issues.jsonl.
 	let missionSnapshot: Issue | null = null;
 	// Captured inside the lock so the post-success Next-block can decide
@@ -865,12 +865,12 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 
 	if (aborted) return;
 
-	let recordedMulchId: string | null = null;
+	let recordedAtlasId: string | null = null;
 	if (shouldRecordDecision && missionSnapshot) {
 		// PLAN_SPEC.md:354-356 — best-effort outbound write. Submit has already
 		// succeeded by this point; any failure here warns on stderr and leaves
 		// the plan + children intact.
-		recordedMulchId = await runOutboundDecision({
+		recordedAtlasId = await runOutboundDecision({
 			seed: missionSnapshot,
 			planId: createdPlanId,
 			approach: submitted.sections.approach,
@@ -923,8 +923,8 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 		);
 	}
 	printSuccess(`${accent(seedId)} now blocked by ${childIds.length} children`);
-	if (recordedMulchId) {
-		printSuccess(`recorded mulch decision ${accent(recordedMulchId)}`);
+	if (recordedAtlasId) {
+		printSuccess(`recorded luuna-atlas decision ${accent(recordedAtlasId)}`);
 	}
 	writeNextHints({
 		planId: createdPlanId,
@@ -2535,11 +2535,11 @@ interface OutboundDecisionArgs {
 
 async function runOutboundDecision(args: OutboundDecisionArgs): Promise<string | null> {
 	const projectRoot = dirname(dirname(args.cwd));
-	// Check ml availability first so the stderr warning distinguishes
-	// "ml not installed" from "no domain matched" — the spec mandates the
-	// former phrasing for the absent-ml branch (PLAN_SPEC.md:354-356).
-	if (!Bun.which("ml", { PATH: process.env.PATH })) {
-		process.stderr.write("⚠ --record-decision: ml not found on PATH; skipping\n");
+	// Check luuna-atlas availability first so the stderr warning distinguishes
+	// "luuna-atlas not installed" from "no domain matched" — the spec mandates the
+	// former phrasing for the absent-luuna-atlas branch (PLAN_SPEC.md:354-356).
+	if (!Bun.which("luuna-atlas", { PATH: process.env.PATH })) {
+		process.stderr.write("⚠ --record-decision: luuna-atlas not found on PATH; skipping\n");
 		return null;
 	}
 	const { domain } = inferDomain({
@@ -2548,7 +2548,7 @@ async function runOutboundDecision(args: OutboundDecisionArgs): Promise<string |
 		cwd: projectRoot,
 	});
 	if (!domain) {
-		process.stderr.write("⚠ --record-decision: no mulch domain inferred (skipping)\n");
+		process.stderr.write("⚠ --record-decision: no luuna-atlas domain inferred (skipping)\n");
 		return null;
 	}
 	const approach = typeof args.approach === "string" ? args.approach : "";
@@ -2563,5 +2563,5 @@ async function runOutboundDecision(args: OutboundDecisionArgs): Promise<string |
 		process.stderr.write(`⚠ --record-decision: ${result.reason ?? "failed"}\n`);
 		return null;
 	}
-	return result.mulchId ?? null;
+	return result.atlasId ?? null;
 }

@@ -139,9 +139,9 @@ export function configSchema(): JSONSchema {
 							},
 						],
 					},
-					mulch_source: {
+					atlas_source: {
 						type: "string",
-						title: "Mulch source",
+						title: "Atlas source",
 						description:
 							"Optional record type (e.g. `failure`, `decision`) seeded into `prior_art` when emitting a plan prompt.",
 					},

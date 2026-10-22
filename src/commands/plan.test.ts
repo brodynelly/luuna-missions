@@ -74,7 +74,7 @@ function validPlanFor(): {
 		template: "feature",
 		sections: {
 			context: VALID_CONTEXT,
-			approach: "Hardcoded TS template + AJV schema, mirroring mulch's custom_types.",
+			approach: "Hardcoded TS template + AJV schema, mirroring luuna-atlas's custom_types.",
 			alternatives: [],
 			steps: [
 				// Forward semantics: step i with blocks: [j] means step i blocks step j.
@@ -397,7 +397,7 @@ describe("luuna-missions plan submit", () => {
 		const parsed = JSON.parse(stdout) as { success: boolean; plan_id: string };
 		expect(parsed.success).toBe(true);
 		expect(stdout).not.toContain("Next:");
-		// stderr stays clean for --json mode (no Next block, no mulch line) so
+		// stderr stays clean for --json mode (no Next block, no luuna-atlas line) so
 		// pipelines don't pick up surprise content. The Next block is a
 		// human-output affordance, not a JSON one.
 		expect(stderr).not.toContain("Next:");

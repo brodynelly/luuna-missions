@@ -16,6 +16,7 @@ import { join } from "node:path";
 import { Command } from "commander";
 import { findMissionsDir } from "../config.ts";
 import { configSchema } from "../config-schema.ts";
+import { upgradeLegacyConfigKeys } from "../legacy-layout.ts";
 import { accent, muted, outputJson, printSuccess, writeStdout } from "../output.ts";
 import { withLock } from "../store.ts";
 import { CONFIG_FILE } from "../types.ts";
@@ -104,7 +105,7 @@ async function readRawConfig(missionsDir: string): Promise<Record<string, YamlVa
 		throw new Error(`Config not found at ${configPath(missionsDir)}`);
 	}
 	const content = await file.text();
-	return parseYaml(content);
+	return upgradeLegacyConfigKeys(parseYaml(content));
 }
 
 async function writeRawConfig(missionsDir: string, data: Record<string, YamlValue>): Promise<void> {

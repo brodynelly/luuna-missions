@@ -14,6 +14,7 @@ import { findMissionsDir } from "./config.ts";
 import {
 	LEGACY_HOOK_COMMAND_RE,
 	migrateLegacyLayout,
+	upgradeLegacyConfigKeys,
 	upgradeLegacyMarkers,
 } from "./legacy-layout.ts";
 import { replaceMarkerSection } from "./markers.ts";
@@ -175,5 +176,14 @@ describe("legacy layout migration", () => {
 		expect(replaced).toBe("a\n<!-- missions:start -->\nnew\n<!-- missions:end -->\nb");
 		const backref = "note\n\n<!-- seeds:plan-backref:start -->\nx\n<!-- seeds:plan-backref:end -->";
 		expect(stripPlanBackref(backref)).toBe("note");
+	});
+
+	test("legacy mulch_source key is read as atlas_source", () => {
+		const out = upgradeLegacyConfigKeys({
+			plan_templates: { t: { sections: { risks: { mulch_source: "failure" } } } },
+		});
+		expect(JSON.stringify(out.plan_templates.t.sections.risks)).toBe('{"atlas_source":"failure"}');
+		const both = upgradeLegacyConfigKeys({ a: { mulch_source: "x", atlas_source: "y" } });
+		expect(JSON.stringify(both.a)).toBe('{"atlas_source":"y"}');
 	});
 });

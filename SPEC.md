@@ -2,7 +2,7 @@
 
 Git-native issue tracker for AI agent workflows. Zero dependencies, JSONL storage, Bun runtime.
 
-Replaces [beads](https://github.com/steveyegge/beads) in the overstory/mulch ecosystem with something purpose-built: no Dolt, no daemon, no binary DB files. The JSONL file IS the database.
+Replaces [beads](https://github.com/steveyegge/beads) in the overstory and Luuna Atlas ecosystem with something purpose-built: no Dolt, no daemon, no binary DB files. The JSONL file IS the database.
 
 ## Why
 
@@ -22,13 +22,13 @@ Overstory uses ~7 beads operations on a simple data model. Missions covers exact
 2. **Zero runtime dependencies.** Bun built-ins only (`Bun.file`, `Bun.write`, `node:fs`, `node:crypto`).
 3. **Concurrent-safe by default.** Advisory file locks + atomic writes. Multiple agents in worktrees can read/write safely.
 4. **Git-native.** `merge=union` gitattribute handles parallel branch merges. No custom merge driver needed.
-5. **Ecosystem fit.** Same stack as overstory (Bun/TS), same patterns as mulch (JSONL + locks), same CLI conventions (`--json` flag on everything).
+5. **Ecosystem fit.** Same stack as overstory (Bun/TS), same patterns as Luuna Atlas (JSONL + locks), same CLI conventions (`--json` flag on everything).
 
 ## On-Disk Format
 
 ```
 .luuna/missions/
-  config.yaml          # Project config (YAML, matches overstory/mulch convention)
+  config.yaml          # Project config (YAML, matches overstory and Luuna Atlas convention)
   issues.jsonl         # All issues, one JSON object per line
   templates.jsonl      # Molecule/template definitions
   .gitignore           # Ignores lock files
@@ -169,7 +169,7 @@ Accepts both numeric (`--priority=2`) and shorthand (`--priority=P2`).
 
 ## CLI
 
-Binary name: `luuna-missions` (like `bd` for beads, `mulch` for mulch).
+Binary name: `luuna-missions` (like `bd` for beads, `luuna-atlas` for Luuna Atlas).
 
 Every command supports `--json` for structured output. Non-JSON output is human-readable with ANSI colors (respects `NO_COLOR`).
 
@@ -262,7 +262,7 @@ Template pour:
 
 ## Concurrency Model
 
-Stolen from mulch (which handles multi-agent writes in production today).
+Stolen from Luuna Atlas (which handles multi-agent writes in production today).
 
 ### Advisory File Locking
 
@@ -389,11 +389,11 @@ Explicitly out of scope (keep it minimal):
 | Concern | Choice | Rationale |
 |---------|--------|-----------|
 | Runtime | Bun | Matches overstory, runs TS directly |
-| Language | TypeScript (strict) | Matches overstory/mulch |
+| Language | TypeScript (strict) | Matches overstory and Luuna Atlas |
 | Dependencies | Zero runtime | Matches overstory's hard rule |
-| Config | YAML (minimal built-in parser) | Matches overstory/mulch convention |
+| Config | YAML (minimal built-in parser) | Matches overstory and Luuna Atlas convention |
 | Storage | JSONL | Git-native, diffable, mergeable |
-| Locking | Advisory file locks | Proven in mulch for multi-agent |
+| Locking | Advisory file locks | Proven in Luuna Atlas for multi-agent |
 | Formatting | Biome (tabs, 100 char width) | Matches overstory |
 | Testing | `bun test` (colocated) | Real I/O, no mocks |
 | Distribution | `bun link` locally | No npm publish for now |

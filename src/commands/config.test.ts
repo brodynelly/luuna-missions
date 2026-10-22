@@ -69,7 +69,7 @@ describe("luuna-missions config schema", () => {
 		const sectionSpec = defs.SectionSpec as Record<string, unknown>;
 		const sectionProps = sectionSpec.properties as Record<string, unknown>;
 		expect(Object.keys(sectionProps).sort()).toEqual(
-			["item", "kind", "min", "min_length", "mulch_source", "prompt", "required"].sort(),
+			["item", "kind", "min", "min_length", "atlas_source", "prompt", "required"].sort(),
 		);
 		expect(sectionSpec.required).toEqual(["required", "kind", "prompt"]);
 	});

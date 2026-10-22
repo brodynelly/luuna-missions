@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Atlas coupling now shells out to `luuna-atlas` (resolved on PATH; absent remains a soft no-op) instead of `ml`, and passes `--evidence-missions`. Module `plan-mulch.ts` is now `plan-atlas.ts`. Plan-template section key `mulch_source` is now `atlas_source`; the old key is still read from existing configs (and rewritten on `config set`) via `src/legacy-layout.ts`.
 - Project data moved from `.seeds/` to `.luuna/missions/`. A legacy `.seeds/` directory is renamed automatically the first time any command (including `init`) runs, with one notice line on stderr; managed `.gitattributes` / `.gitignore` lines are rewritten. If both layouts exist the command fails and asks the user to resolve it; symlinked `.luuna` or `.seeds` is refused. The legacy-name handling lives in `src/legacy-layout.ts`.
 - Removed the `sd` and `seeds` bin aliases; `luuna-missions` and `lm` remain. Help, usage and error text, `onboard` / `prime` snippets and shell completions use `luuna-missions`.
 - Environment variables renamed `SEEDS_*` to `LUUNA_MISSIONS_*` (for example `LUUNA_MISSIONS_DEBUG`, `LUUNA_MISSIONS_LOG_LEVEL`). Internal identifiers renamed to match.

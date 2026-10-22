@@ -9,7 +9,7 @@
 // Missions owns exactly the handlers whose command is `luuna-missions prime|guard`; install
 // strips those and appends one fresh group per event, leaving everything else
 // as it was. Re-running is a no-op. --remove strips missions handlers and drops
-// groups and events they leave empty. Mirrors roots/mulch `setup claude`.
+// groups and events they leave empty. Mirrors roots/luuna-atlas `setup claude`.
 
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
