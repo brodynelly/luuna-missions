@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathWith, writeFakeBin } from "../test-fake-bin.ts";
 
 const CLI = join(import.meta.dir, "../../src/index.ts");
 
@@ -16,7 +17,7 @@ beforeEach(async () => {
 	await mkdir(binDir, { recursive: true });
 	invocationLog = join(tmpDir, "ml-invocations.log");
 	originalPath = process.env.PATH;
-	process.env.PATH = `${binDir}:${process.env.PATH ?? ""}`;
+	process.env.PATH = pathWith(binDir);
 	await runSd(["init"], tmpDir);
 });
 
@@ -64,8 +65,7 @@ async function writeFakeMl(opts: {
 	// process can parse a mulch id from stdout. Default empty mirrors older
 	// mulch CLIs that didn't accept --json on record.
 	const recordJsonStr = opts.recordJson === undefined ? "" : JSON.stringify(opts.recordJson);
-	const body = `#!/usr/bin/env bun
-const fs = require("node:fs");
+	const body = `const fs = require("node:fs");
 const argv = process.argv.slice(2);
 fs.appendFileSync(${JSON.stringify(invocationLog)}, JSON.stringify(argv) + "\\n");
 const isStatus = argv[0] === "--json" && argv[1] === "status";
@@ -81,9 +81,7 @@ if (argv[0] === "record") {
 }
 process.exit(0);
 `;
-	const scriptPath = join(binDir, "ml");
-	await writeFile(scriptPath, body);
-	await chmod(scriptPath, 0o755);
+	await writeFakeBin(binDir, "ml", body);
 }
 
 async function readInvocations(): Promise<string[][]> {
