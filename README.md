@@ -10,7 +10,7 @@ bun src/index.ts --help
 bun run verify
 ```
 
-The primary executable is `luuna-missions` with `lm` as its short alias.
+The standalone executable is `luuna-missions`; `lms` is the Luuna suite shortcut and `lm` remains a compatibility alias. `luuna missions <args>` is the equivalent entry through Luuna's installed launcher. In a checkout, install dependencies with the command above and run `bun src/index.ts <args>`. Registry publication is disabled; use the Luuna CLI installer from the main checkout to make the commands available on PATH.
 
 Project data lives in `.luuna/missions/` (`issues.jsonl`, `plans.jsonl`, `templates.jsonl`, `config.yaml`). Environment variables use the `LUUNA_MISSIONS_` prefix. A legacy `.seeds/` directory is moved to `.luuna/missions/` automatically the first time a command runs; see [MIGRATION.md](MIGRATION.md). Luuna consumes a pinned Git submodule and integrates through the CLI/JSON boundary (Atlas also exports a TypeScript library); runtime policy and approvals remain Luuna's responsibility.
 
