@@ -1,0 +1,8 @@
+Usage: luuna-missions upgrade [options]
+
+Upgrade Luuna Missions after publication from npm
+
+Options:
+  --check     Check for updates without installing
+  --json      Output as JSON
+  -h, --help  display help for command

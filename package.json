@@ -12,6 +12,11 @@
   "main": "src/index.ts",
   "files": [
     "src",
+    "cmd",
+    "internal",
+    "go.mod",
+    "go.sum",
+    "scripts/native-build.ts",
     "UPSTREAM.md"
   ],
   "engines": {
@@ -36,6 +41,8 @@
     "url": "https://github.com/brodynelly/luuna-missions.git"
   },
   "scripts": {
+    "build:native": "bun scripts/native-build.ts",
+    "test:go": "go test ./...",
     "test": "bun test",
     "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write --error-on-warnings .",
@@ -48,7 +55,7 @@
     "check:agents": "bun run scripts/validate-agents-md.ts --known-missing docs/check-all-standard.md --known-missing templates/l5-toolkit/scripts",
     "check:ci-parity": "bun scripts/check-ci-parity.ts",
     "check:all": "bun scripts/check-all.ts",
-    "verify": "bun run typecheck && bun run check:agents && bun test --timeout 30000",
+    "verify": "bun run typecheck && bun run check:agents && bun test --timeout 30000 && bun scripts/verify-native.ts",
     "test:ci": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir=coverage --reporter=junit --reporter-outfile=junit.xml",
     "report:test-timing": "bun run scripts/report-test-timing.ts",
     "report:quality": "bun run scripts/report-quality-metrics.ts",
