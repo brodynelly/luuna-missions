@@ -5,6 +5,7 @@
   "type": "module",
   "bin": {
     "luuna-missions": "src/index.ts",
+    "lms": "src/index.ts",
     "lm": "src/index.ts",
     "missions": "src/index.ts"
   },

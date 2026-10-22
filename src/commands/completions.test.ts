@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
 import { registerAll } from "../register-all.ts";
-import { runCli } from "../test-harness.ts";
 import { generateBash, generateFish, generateZsh } from "./completions.ts";
 
 // Previously this file spawned `bun run src/index.ts completions <shell>` to
@@ -26,17 +25,19 @@ describe("luuna-missions completions (script generators)", () => {
 		const out = generateBash(fullProgram);
 		expect(out).toContain("complete -F");
 		expect(out).toContain("_luuna_missions_completions");
+		expect(out).toContain("luuna-missions lms lm");
 	});
 
-	test("zsh output contains #compdef luuna-missions lm", () => {
+	test("zsh output contains #compdef luuna-missions lms lm", () => {
 		const out = generateZsh(fullProgram);
-		expect(out).toContain("#compdef luuna-missions lm");
+		expect(out).toContain("#compdef luuna-missions lms lm");
 		expect(out).toContain("_luuna_missions");
 	});
 
 	test("fish output contains complete -c luuna-missions", () => {
 		const out = generateFish(fullProgram);
 		expect(out).toContain("complete -c luuna-missions");
+		expect(out).toContain("complete -c lms");
 	});
 
 	test("output includes known commands", () => {
@@ -60,15 +61,26 @@ describe("luuna-missions completions (script generators)", () => {
 
 describe("luuna-missions completions (CLI validation)", () => {
 	let tmpDir: string;
+	const cli = join(import.meta.dir, "..", "index.ts");
+	const decoder = new TextDecoder();
+
+	function runCli(args: string[]): { exitCode: number; stderr: string } {
+		// Intentional CLI failures set process.exitCode. Isolate that state from
+		// Bun's test runner, which retains it on Windows after a passing test.
+		const result = Bun.spawnSync([process.execPath, cli, "completions", ...args], {
+			cwd: tmpDir,
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		return { exitCode: result.exitCode, stderr: decoder.decode(result.stderr) };
+	}
 
 	beforeAll(async () => {
-		// runCli chdirs into the working dir; give it a real temp dir even
-		// though `completions` itself doesn't touch the filesystem.
 		tmpDir = await mkdtemp(join(tmpdir(), "missions-completions-"));
 	});
 
 	test("unknown shell exits non-zero with printError ✗ prefix", async () => {
-		const { exitCode, stderr } = await runCli(["completions", "powershell"], tmpDir);
+		const { exitCode, stderr } = runCli(["powershell"]);
 		expect(exitCode).toBe(1);
 		expect(stderr).toContain("Unknown shell");
 		// pl-c94f step 1: validation errors flow through printError ("✗ " prefix)
@@ -76,7 +88,7 @@ describe("luuna-missions completions (CLI validation)", () => {
 	});
 
 	test("missing argument exits non-zero", async () => {
-		const { exitCode } = await runCli(["completions"], tmpDir);
+		const { exitCode } = runCli([]);
 		expect(exitCode).not.toBe(0);
 	});
 

@@ -14,7 +14,7 @@ bun run verify
 
 Source is in `src/`; tests use Bun and real temporary files. Keep strict TypeScript, existing module conventions, advisory locks, atomic writes, JSON output contracts, and secret redaction. Test changes at the appropriate public boundary.
 
-Primary executable: luuna-missions (lm). Project data lives in .luuna/missions (created by init); environment variables use the `LUUNA_MISSIONS_` prefix. Legacy-layout names are confined to `src/legacy-layout.ts`. Preserve configuration keys, record schemas and public types unless an explicit migration is designed and tested. Runtime policy and approval enforcement belong in Luuna, not in a rewrite of this component.
+Primary executable: luuna-missions (lms; compatibility alias lm). This component owns Git-native tickets and structured plans. Atlas owns structured expertise and project memory; Beacon owns reusable prompts. Project data lives in .luuna/missions (created by init); environment variables use the `LUUNA_MISSIONS_` prefix. Legacy layout migration is confined to `src/legacy-layout.ts`. Preserve configuration keys, record schemas and public types unless an explicit migration is designed and tested. Runtime policy and approval enforcement belong in Luuna, not in a rewrite of this component.
 
 Do not load imported dogfooding stores, session histories, or upstream agent skills as Luuna work records. Do not create them as a development ritual. Installations must not alter the root Git hook configuration. This is an independent public repository maintained by brodynelly. Packages remain unpublished; registry publication and upstream self-upgrades require a separate reviewed release process.
 

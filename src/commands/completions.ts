@@ -73,7 +73,7 @@ _luuna_missions_completions() {
 ${caseBlock}
 }
 
-complete -F _luuna_missions_completions luuna-missions lm
+complete -F _luuna_missions_completions luuna-missions lms lm
 `;
 }
 
@@ -110,7 +110,7 @@ export function generateZsh(program: Command): string {
 			? `    case "$words[1]" in\n${subcmdFunctions.join("\n")}\n    esac`
 			: "";
 
-	return `#compdef luuna-missions lm
+	return `#compdef luuna-missions lms lm
 
 _luuna_missions() {
     local -a commands
@@ -138,7 +138,7 @@ export function generateFish(program: Command): string {
 	const lines: string[] = ["# fish completions for luuna-missions"];
 
 	// Disable file completions for luuna-missions
-	lines.push("complete -c luuna-missions -f");
+	for (const binary of ["luuna-missions", "lms", "lm"]) lines.push(`complete -c ${binary} -f`);
 	lines.push("");
 
 	// Top-level commands
@@ -146,9 +146,11 @@ export function generateFish(program: Command): string {
 	const noSubcmdCond = cmdNames.map((n) => `__fish_seen_subcommand_from ${n}`).join("; or ");
 
 	for (const cmd of cmds) {
-		lines.push(
-			`complete -c luuna-missions -n "not ${noSubcmdCond}" -a ${cmd.name} -d '${cmd.description.replace(/'/g, "\\'")}'`,
-		);
+		for (const binary of ["luuna-missions", "lms", "lm"]) {
+			lines.push(
+				`complete -c ${binary} -n "not ${noSubcmdCond}" -a ${cmd.name} -d '${cmd.description.replace(/'/g, "\\'")}'`,
+			);
+		}
 	}
 
 	lines.push("");
@@ -156,16 +158,20 @@ export function generateFish(program: Command): string {
 	// Subcommands and options
 	for (const cmd of cmds) {
 		for (const sub of cmd.subcommands) {
-			lines.push(
-				`complete -c luuna-missions -n "__fish_seen_subcommand_from ${cmd.name}" -a ${sub.name} -d '${sub.description.replace(/'/g, "\\'")}'`,
-			);
+			for (const binary of ["luuna-missions", "lms", "lm"]) {
+				lines.push(
+					`complete -c ${binary} -n "__fish_seen_subcommand_from ${cmd.name}" -a ${sub.name} -d '${sub.description.replace(/'/g, "\\'")}'`,
+				);
+			}
 		}
 		for (const o of cmd.options) {
 			const flag = o.flags.replace(/^--?/, "");
 			const longFlag = o.flags.startsWith("--") ? `-l ${flag}` : `-s ${flag}`;
-			lines.push(
-				`complete -c luuna-missions -n "__fish_seen_subcommand_from ${cmd.name}" ${longFlag} -d '${o.description.replace(/'/g, "\\'")}'`,
-			);
+			for (const binary of ["luuna-missions", "lms", "lm"]) {
+				lines.push(
+					`complete -c ${binary} -n "__fish_seen_subcommand_from ${cmd.name}" ${longFlag} -d '${o.description.replace(/'/g, "\\'")}'`,
+				);
+			}
 		}
 	}
 
