@@ -16,7 +16,7 @@ Git-native issue tracker for AI agent workflows — create, track, and close iss
 - [x] Agent integration: `prime` outputs usable context, `onboard` installs to CLAUDE.md
 - [x] Concurrent safety: advisory file locking + atomic writes prevent corruption under multi-agent access
 - [x] Worktree detection resolves to main repo `.luuna/missions/` correctly
-- [x] `--json` flag produces structured output on all commands (for programmatic consumption by overstory)
+- [x] `--json` flag produces structured output on all commands (for programmatic consumption by orchestrators)
 - [x] All tests pass (`bun test`) — 235 tests across 18 files
 - [x] TypeScript strict mode clean (`bun run typecheck`)
 - [x] Linting passes (`bun run lint`) — 35 warn-level `noNonNullAssertion` warnings, all post-check (non-blocking)
@@ -39,7 +39,7 @@ Git-native issue tracker for AI agent workflows — create, track, and close iss
 
 ## Current State
 
-Missions is V1-complete. All 21 CLI commands are implemented. 235 tests pass across 18 files. TypeScript strict mode and linting are clean. CI is green. The `--json` output mode is used by overstory for programmatic integration. Published to npm at v0.2.5.
+Missions is V1-complete. All 21 CLI commands are implemented. 235 tests pass across 18 files. TypeScript strict mode and linting are clean. CI is green. The `--json` output mode is used by orchestrators for programmatic integration. Published to npm at v0.2.5.
 
 **Completion: 100% of V1 scope implemented.** One minor code quality fix pending before close.
 

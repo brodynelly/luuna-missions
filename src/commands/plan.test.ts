@@ -672,7 +672,7 @@ describe("luuna-missions plan submit: existing_seed adoption (missions-24c6 / pl
 		expect(plansAfter.length).toBe(plansBefore.length);
 	});
 
-	// missions-5583 / warren §11.Q — synthesis: mint a parent seed + plan whose
+	// missions-5583 — synthesis: mint a parent seed + plan whose
 	// children are entirely existing missions, with no titles on the steps.
 	test("synthesis: steps may omit title when existing_seed is set", async () => {
 		const parent = await createSeed(tmpDir, "Synthesis parent");
@@ -3643,7 +3643,7 @@ describe("luuna-missions plan: name field (missions-5640)", () => {
 	});
 
 	test("plan list surfaces the name in human output", async () => {
-		await submitWithArgs("Wire greenhouse → overstory handoff");
+		await submitWithArgs("Wire greenhouse → orchestrator handoff");
 		const { stdout, exitCode } = await run(["plan", "list"], tmpDir);
 		expect(exitCode).toBe(0);
 		expect(stdout).toContain("Wire greenhouse");

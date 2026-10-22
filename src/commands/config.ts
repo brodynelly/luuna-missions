@@ -1,7 +1,7 @@
 // `luuna-missions config` — schema-driven read/write surface for `.luuna/missions/config.yaml`.
 //
-// Designed as warren V2's wire contract (warren ROADMAP R-10):
-//   - `luuna-missions config schema --json` emits the JSON Schema (warren auto-renders a form)
+// Designed as a wire contract for schema-driven configuration UIs:
+//   - `luuna-missions config schema --json` emits the JSON Schema (a UI can auto-render a form)
 //   - `luuna-missions config show [--path <p>]` reads the current value
 //   - `luuna-missions config set <path> <value>` validates + writes atomically (YAML-parsed)
 //   - `luuna-missions config unset <path>` removes a value
@@ -88,7 +88,7 @@ function unsetAtPath(data: Record<string, YamlValue>, parts: string[]): boolean 
 
 function validateConfig(data: unknown): void {
 	// Strip the meta-schema URI: configSchema() advertises draft 2020-12 for
-	// downstream consumers (warren's UI), but our shared compileSchema runs
+	// downstream consumers (schema-driven UIs), but our shared compileSchema runs
 	// AJV in default (draft-07) mode and rejects unknown $schema URIs.
 	const { $schema: _meta, ...schema } = configSchema();
 	const validator = compileSchema(schema);

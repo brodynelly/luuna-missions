@@ -36,7 +36,7 @@ Plans are created via `luuna-missions plan prompt <seed-id>` → LLM → `luuna-
 ### config.yaml additions
 
 ```yaml
-project: overstory
+project: example-app
 version: "1"
 
 plan_templates:
@@ -470,11 +470,11 @@ Release inverts each mutation:
 
 The "release train" use case (missions-3dd1) assembles a set of already-existing missions into a single plan, in a controlled order, ending with a release step — with no spawned or placeholder children. Three additions support it:
 
-- **`luuna-missions plan create <seed-id>`** writes a plan row with `children: []`, `sections: { steps: [] }`, `status: "approved"`, `revision: 1`, and links the parent seed (`seed.plan_id ← <pl-id>`). No children means no `blockedBy` edges yet — those land as missions are adopted. `--name` sets the human label (defaults to the seed title); `--template` overrides the seed-type default. A pre-existing non-draft plan for the seed is rejected (exit non-zero) — adopt into the existing plan instead. Because the steps blueprint is empty, `luuna-missions plan validate` will report missing required sections for the chosen template; this is expected for adopt-only plans and does not affect warren's plan-run, which consumes `plan.children`.
+- **`luuna-missions plan create <seed-id>`** writes a plan row with `children: []`, `sections: { steps: [] }`, `status: "approved"`, `revision: 1`, and links the parent seed (`seed.plan_id ← <pl-id>`). No children means no `blockedBy` edges yet — those land as missions are adopted. `--name` sets the human label (defaults to the seed title); `--template` overrides the seed-type default. A pre-existing non-draft plan for the seed is rejected (exit non-zero) — adopt into the existing plan instead. Because the steps blueprint is empty, `luuna-missions plan validate` will report missing required sections for the chosen template; this is expected for adopt-only plans and does not affect downstream plan runners, which consume `plan.children`.
 
 - **`luuna-missions plan adopt` positioning** — `--at <i>` inserts the adopted batch at a 1-based slot in `plan.children` (valid range `1..len+1`); `--before <seed>` / `--after <seed>` anchor on an existing child id. The three are mutually exclusive; omitting all appends (prior behavior). The adopted ids are inserted as a contiguous block preserving command-line order. Positioning is orthogonal to `--step` (which sets `plan_step_index`); both may be supplied.
 
-- **`luuna-missions plan reorder <plan-id> <seed-id...>`** sets the exact `plan.children` order in one call. The supplied ids must be a permutation of the current children — every child listed exactly once, no extras, no duplicates (use `adopt`/`release` to change membership). Only the plan row's `children` array order changes; seed link state (`plan_id`, `plan_step_index`, `blockedBy` edges) is untouched. Revision bumps once. Lock: `plans.jsonl` only (no issue mutation). warren's plan-run reads `plan.children` order verbatim (`seq = index + 1`), so `reorder` is the surface for pinning a release seed last.
+- **`luuna-missions plan reorder <plan-id> <seed-id...>`** sets the exact `plan.children` order in one call. The supplied ids must be a permutation of the current children — every child listed exactly once, no extras, no duplicates (use `adopt`/`release` to change membership). Only the plan row's `children` array order changes; seed link state (`plan_id`, `plan_step_index`, `blockedBy` edges) is untouched. Revision bumps once. Lock: `plans.jsonl` only (no issue mutation). downstream plan runners read `plan.children` order verbatim (`seq = index + 1`), so `reorder` is the surface for pinning a release seed last.
 
 `luuna-missions plan create` and `luuna-missions plan reorder` accept a `pl-*` id or the parent seed id wherever a plan id is expected, consistent with the rest of the planning surface.
 

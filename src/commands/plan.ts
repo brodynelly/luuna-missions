@@ -2033,7 +2033,7 @@ interface ReorderOptions {
 // plan.children in one call. The provided ids must be a permutation of the
 // current children (same set, no missing, no extra, no dupes) — reorder is a
 // pure ordering operation, never an add/remove (use adopt/release for that).
-// warren's plan-run consumes plan.children order verbatim (seq = index + 1), so
+// Downstream plan runners consume plan.children order verbatim (seq = index + 1), so
 // this is the surface for pinning a release seed last. Link state on the missions
 // (plan_id, plan_step_index, blockedBy edges) is untouched; only the plan row's
 // children array order changes. Bumps revision once per call. Lock: plans only

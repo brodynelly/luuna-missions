@@ -25,7 +25,7 @@ function writeBudget(path: string, trackerPatterns: string[], allowlist: string[
 }
 
 const DEFAULT_PATTERNS = [
-	"\\b(?:warren|pl|mx|burrow|beacon|missions|atlas)-[0-9a-f]+\\b",
+	"\\b(?:pl|mx|beacon|missions|atlas)-[0-9a-f]+\\b",
 	"#\\d+\\b",
 	"https?://\\S+",
 ];
@@ -38,7 +38,7 @@ describe("loadBudget", () => {
 			writeBudget(p, DEFAULT_PATTERNS);
 			const { trackerRegexes } = loadBudget(p);
 			expect(trackerRegexes).toHaveLength(3);
-			expect(trackerRegexes[0]?.test("// TODO(warren-abc1): later")).toBe(true);
+			expect(trackerRegexes[0]?.test("// TODO(missions-abc1): later")).toBe(true);
 			expect(trackerRegexes[1]?.test("// TODO #42")).toBe(true);
 			expect(trackerRegexes[2]?.test("// TODO https://x.example/")).toBe(true);
 		} finally {
@@ -77,7 +77,7 @@ describe("scan — synthetic pass", () => {
 		const { root, cleanup } = makeFixture();
 		try {
 			writeFileTree(root, {
-				"src/a.ts": "// TODO(warren-7f2b): later\nexport const a = 1;\n",
+				"src/a.ts": "// TODO(missions-7f2b): later\nexport const a = 1;\n",
 				"src/b.ts": "// FIXME #123 wire this up\nexport const b = 2;\n",
 				"src/c.ts": "// HACK https://example.com/x — temporary\nexport const c = 3;\n",
 			});
@@ -97,12 +97,12 @@ describe("scan — synthetic pass", () => {
 		}
 	});
 
-	test("placeholder strings like warren-XXXX are not flagged as markers", () => {
+	test("placeholder strings like missions-XXXX are not flagged as markers", () => {
 		const { root, cleanup } = makeFixture();
 		try {
 			writeFileTree(root, {
 				"src/a.ts":
-					"// example placeholder: warren-XXXX or pl-XXXX (no real marker)\nexport const a = 1;\n",
+					"// example placeholder: missions-XXXX or mx-XXXX (no real marker)\nexport const a = 1;\n",
 			});
 			const budgetPath = join(root, "budget.json");
 			writeBudget(budgetPath, DEFAULT_PATTERNS);
@@ -216,7 +216,7 @@ describe("CLI integration", () => {
 		const { root, cleanup } = makeFixture();
 		try {
 			writeFileTree(root, {
-				"src/a.ts": "// TODO(warren-7f2b): later\nexport const a = 1;\n",
+				"src/a.ts": "// TODO(missions-7f2b): later\nexport const a = 1;\n",
 			});
 			const budgetPath = join(root, "budget.json");
 			writeBudget(budgetPath, DEFAULT_PATTERNS);

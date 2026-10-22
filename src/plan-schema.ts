@@ -19,7 +19,7 @@ type JSONSchema = Record<string, unknown>;
 // AJV `required` list: adoption-only steps (existing_seed set, no spawn) may
 // omit `title` since the adopted seed's title is preserved verbatim. The
 // "either title or existing_seed" invariant runs as a post-AJV pass so the
-// error message points at the offending step path (missions-5583 / warren §11.Q).
+// error message points at the offending step path (missions-5583).
 const STEP_SCHEMA: JSONSchema = {
 	type: "object",
 	properties: {
@@ -130,8 +130,8 @@ function findStepsSectionKey(template: PlanTemplate): string | undefined {
 
 // Each step must declare either `title` (fresh spawn) or `existing_seed`
 // (adoption). Title is optional only when existing_seed is set, since the
-// adopted seed's title is preserved verbatim. Synthesis-style plans (warren
-// §11.Q) where every child is an adoption can therefore omit titles entirely.
+// adopted seed's title is preserved verbatim. Synthesis-style plans (where
+// every child is an adoption) can therefore omit titles entirely.
 // (missions-5583)
 function validateStepTitleOrAdopt(data: unknown, sectionKey: string): ErrorEntry[] {
 	const sections = (data as { sections?: unknown })?.sections;

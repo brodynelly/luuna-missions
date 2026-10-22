@@ -1,10 +1,10 @@
-// JSON Schema for `.luuna/missions/config.yaml`. Wire-format contract for warren V2's
-// schema-driven config UI (warren ROADMAP R-10): warren reads this schema,
+// JSON Schema for `.luuna/missions/config.yaml`. Wire-format contract for
+// schema-driven config UIs (such as the Luuna desktop): a UI reads this schema,
 // renders a form, and writes back via `luuna-missions config set <path> <value>`. Locked
 // with a golden test (config.test.ts) so any shape change is intentional.
 //
 // Mirrors the ground-truth shape produced by readConfig + loadPlanTemplates in
-// src/config.ts. Built-in plan templates appear in `examples` so warren's UI
+// src/config.ts. Built-in plan templates appear in `examples` so a UI
 // can offer a "copy a built-in to start" affordance.
 
 import {
@@ -28,7 +28,7 @@ export function configSchema(): JSONSchema {
 		$id: "https://github.com/brodynelly/luuna-missions/config.schema.json",
 		title: "Missions project config",
 		description:
-			"Schema for .luuna/missions/config.yaml. Consumed by warren's schema-driven UI; emit via `luuna-missions config schema`.",
+			"Schema for .luuna/missions/config.yaml. Consumed by schema-driven configuration UIs; emit via `luuna-missions config schema`.",
 		type: "object",
 		required: ["project", "version"],
 		additionalProperties: false,
