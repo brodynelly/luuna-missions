@@ -1,5 +1,5 @@
 import { type Command, Option } from "commander";
-import { findSeedsDir, readConfig } from "../config.ts";
+import { findMissionsDir, readConfig } from "../config.ts";
 import { generateId } from "../id.ts";
 import { collect, collectRepeated, parseIntent } from "../intent.ts";
 import { outputJson, printSuccess } from "../output.ts";
@@ -40,7 +40,7 @@ function parseArgs(args: string[]) {
 	return flags;
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const flags = parseArgs(args);
 	const title = flags.title;
@@ -87,7 +87,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 	if (flags.from === true) throw new Error("--from requires an issue id");
 	const from = typeof flags.from === "string" ? flags.from.trim() : undefined;
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	const config = await readConfig(dir);
 
 	let createdId = "";

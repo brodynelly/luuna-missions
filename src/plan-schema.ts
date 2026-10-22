@@ -19,7 +19,7 @@ type JSONSchema = Record<string, unknown>;
 // AJV `required` list: adoption-only steps (existing_seed set, no spawn) may
 // omit `title` since the adopted seed's title is preserved verbatim. The
 // "either title or existing_seed" invariant runs as a post-AJV pass so the
-// error message points at the offending step path (seeds-5583 / warren §11.Q).
+// error message points at the offending step path (missions-5583 / warren §11.Q).
 const STEP_SCHEMA: JSONSchema = {
 	type: "object",
 	properties: {
@@ -29,12 +29,12 @@ const STEP_SCHEMA: JSONSchema = {
 		blocks: { type: "array", items: { type: "integer" } },
 		plan_template: { type: "string" },
 		// existing_seed adopts an already-open seed at submit time instead of
-		// spawning a fresh child (seeds-3c89 / pl-43ff step 1). The schema accepts
+		// spawning a fresh child (missions-3c89 / pl-43ff step 1). The schema accepts
 		// any non-empty string; existence, status, and id-shape checks live in
 		// runSubmit alongside the rest of the spawn pipeline.
 		existing_seed: { type: "string", minLength: 1 },
 		// labels: optional per-step labels applied to the spawned/adopted child seed
-		// (seeds-7561 / pl-e5a8 step 1). Author-facing strings are normalized
+		// (missions-7561 / pl-e5a8 step 1). Author-facing strings are normalized
 		// (lowercase, trim, dedup) by runSubmit; the schema only enforces the
 		// pre-normalization shape: an array of non-empty trimmed strings.
 		labels: {
@@ -132,7 +132,7 @@ function findStepsSectionKey(template: PlanTemplate): string | undefined {
 // (adoption). Title is optional only when existing_seed is set, since the
 // adopted seed's title is preserved verbatim. Synthesis-style plans (warren
 // §11.Q) where every child is an adoption can therefore omit titles entirely.
-// (seeds-5583)
+// (missions-5583)
 function validateStepTitleOrAdopt(data: unknown, sectionKey: string): ErrorEntry[] {
 	const sections = (data as { sections?: unknown })?.sections;
 	if (!sections || typeof sections !== "object") return [];
@@ -158,7 +158,7 @@ function validateStepTitleOrAdopt(data: unknown, sectionKey: string): ErrorEntry
 }
 
 // step.blocks values are 1-based: step 1 is the first step, step N is the
-// last (seeds-185f). Internal `plan_step_index` on spawned children stays
+// last (missions-185f). Internal `plan_step_index` on spawned children stays
 // 0-based — it's a code-level back-link, not author-facing.
 function validateStepBlocks(data: unknown, sectionKey: string): ErrorEntry[] {
 	const sections = (data as { sections?: unknown })?.sections;
@@ -195,7 +195,7 @@ function validateStepBlocks(data: unknown, sectionKey: string): ErrorEntry[] {
 
 // Map seed type -> default template name (PLAN_SPEC.md:271, 429). Hard-coded
 // per the answer to open question 4. `--template` always overrides. `refactor`
-// is intentionally opt-in via `--template` only; see seeds-6730 / the header
+// is intentionally opt-in via `--template` only; see missions-6730 / the header
 // comment on BUILTIN_REFACTOR_TEMPLATE.
 const TYPE_DEFAULTS: Record<string, string> = {
 	task: "feature",

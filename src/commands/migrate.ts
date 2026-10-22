@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Command } from "commander";
-import { findSeedsDir, projectRootFromSeedsDir } from "../config.ts";
+import { findMissionsDir, projectRootFromMissionsDir } from "../config.ts";
 import { outputJson } from "../output.ts";
 import { issuesPath, readIssues, withLock, writeIssues } from "../store.ts";
 import type { Issue } from "../types.ts";
@@ -67,10 +67,10 @@ function mapBeadsIssue(b: BeadsIssue): Issue | null {
 	return issue;
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
-	const dir = seedsDir ?? (await findSeedsDir());
-	const projectRoot = projectRootFromSeedsDir(dir);
+	const dir = missionsDir ?? (await findMissionsDir());
+	const projectRoot = projectRootFromMissionsDir(dir);
 
 	const beadsPath = join(projectRoot, ".beads", "issues.jsonl");
 	if (!existsSync(beadsPath)) {

@@ -24,7 +24,7 @@ async function create(title: string, cwd: string): Promise<string> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-show-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-show-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -32,7 +32,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd show single id (preserved)", () => {
+describe("luuna-missions show single id (preserved)", () => {
 	test("renders one issue in human format", async () => {
 		const id = await create("Alpha", tmpDir);
 		const { stdout, exitCode } = await run(["show", id], tmpDir);
@@ -57,13 +57,13 @@ describe("sd show single id (preserved)", () => {
 	});
 
 	test("unknown id throws (single-id behavior unchanged)", async () => {
-		const { exitCode, stderr } = await run(["show", "seeds-9999"], tmpDir);
+		const { exitCode, stderr } = await run(["show", "missions-9999"], tmpDir);
 		expect(exitCode).not.toBe(0);
-		expect(stderr).toContain("Issue not found: seeds-9999");
+		expect(stderr).toContain("Issue not found: missions-9999");
 	});
 });
 
-describe("sd show multiple ids", () => {
+describe("luuna-missions show multiple ids", () => {
 	test("human output renders all issues separated by a divider", async () => {
 		const a = await create("First", tmpDir);
 		const b = await create("Second", tmpDir);
@@ -96,7 +96,7 @@ describe("sd show multiple ids", () => {
 
 	test("--json mixes valid + invalid into issues + errors, exits non-zero", async () => {
 		const a = await create("First", tmpDir);
-		const { stdout, exitCode } = await run(["show", a, "seeds-9999", "--json"], tmpDir);
+		const { stdout, exitCode } = await run(["show", a, "missions-9999", "--json"], tmpDir);
 		const out = JSON.parse(stdout) as {
 			success: boolean;
 			command: string;
@@ -108,7 +108,7 @@ describe("sd show multiple ids", () => {
 		expect(out.command).toBe("show");
 		expect(out.issues.map((i) => i.id)).toEqual([a]);
 		expect(out.errors).toHaveLength(1);
-		expect(out.errors[0]?.id).toBe("seeds-9999");
+		expect(out.errors[0]?.id).toBe("missions-9999");
 		expect(out.errors[0]?.error).toContain("not found");
 	});
 
@@ -155,19 +155,19 @@ describe("sd show multiple ids", () => {
 		expect(out.success).toBe(false);
 		expect(out.issues.map((i) => i.id)).toEqual([a]);
 		expect(out.errors[0]?.id).toBe("pl-deadbeef");
-		expect(out.errors[0]?.error).toContain("sd plan show");
+		expect(out.errors[0]?.error).toContain("luuna-missions plan show");
 	});
 
 	test("ids mode prints found ids and errors to stderr", async () => {
 		const a = await create("First", tmpDir);
 		const { stdout, stderr, exitCode } = await run(
-			["show", a, "seeds-9999", "--format", "ids"],
+			["show", a, "missions-9999", "--format", "ids"],
 			tmpDir,
 		);
 		expect(exitCode).not.toBe(0);
 		expect(stdout.trim()).toBe(a);
-		expect(stderr).toContain("seeds-9999");
+		expect(stderr).toContain("missions-9999");
 		// pl-c94f step 1: per-id errors flow through printError ("✗ " prefix)
-		expect(stderr).toContain("✗ seeds-9999");
+		expect(stderr).toContain("✗ missions-9999");
 	});
 });

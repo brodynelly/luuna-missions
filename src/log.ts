@@ -1,5 +1,5 @@
 /**
- * Structured logging for the seeds CLI (pino).
+ * Structured logging for the missions CLI (pino).
  *
  * This is the observability channel — diagnostic/debug output that survives as
  * machine-parseable NDJSON in CI and non-TTY contexts, and renders prettily in
@@ -8,8 +8,8 @@
  *
  * Level resolution lives inside `createLog()` (never read at module top) so
  * tests can override `process.env` and re-create a logger deterministically:
- *   - explicit `SEEDS_LOG_LEVEL` wins,
- *   - `SEEDS_DEBUG === "1"` flips the default to `debug`,
+ *   - explicit `LUUNA_MISSIONS_LOG_LEVEL` wins,
+ *   - `LUUNA_MISSIONS_DEBUG === "1"` flips the default to `debug`,
  *   - otherwise `info`.
  *
  * Sensitive values are scrubbed via pino `redact` with `remove: true` (the key
@@ -47,8 +47,8 @@ export const REDACT_PATHS: readonly string[] = [
 ];
 
 // pino's built-in levels. Kept as a literal set so we can validate
-// SEEDS_LOG_LEVEL without trusting an arbitrary env value at the type cast —
-// an unknown value (e.g. SEEDS_LOG_LEVEL=chatty) would otherwise crash pino at
+// LUUNA_MISSIONS_LOG_LEVEL without trusting an arbitrary env value at the type cast —
+// an unknown value (e.g. LUUNA_MISSIONS_LOG_LEVEL=chatty) would otherwise crash pino at
 // logger init. Mirrors the keys of `pino.levels.values`.
 const VALID_LEVELS: ReadonlySet<string> = new Set<pino.LevelWithSilent>([
 	"trace",
@@ -65,9 +65,9 @@ function isValidLevel(value: string): value is pino.LevelWithSilent {
 }
 
 function resolveLevel(): pino.LevelWithSilent {
-	const explicit = process.env.SEEDS_LOG_LEVEL;
+	const explicit = process.env.LUUNA_MISSIONS_LOG_LEVEL;
 	if (explicit && isValidLevel(explicit)) return explicit;
-	if (process.env.SEEDS_DEBUG === "1") return "debug";
+	if (process.env.LUUNA_MISSIONS_DEBUG === "1") return "debug";
 	return "info";
 }
 

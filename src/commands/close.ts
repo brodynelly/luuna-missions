@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { outputJson, printSuccess } from "../output.ts";
 import { affectedPlanIds, applyPlanTransitions } from "../plan-lifecycle.ts";
 import {
@@ -47,16 +47,17 @@ function parseArgs(args: string[]) {
 	return { flags, positional };
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const { flags, positional } = parseArgs(args);
 
-	if (positional.length === 0) throw new Error("Usage: sd close <id> [ids...] [--reason text]");
+	if (positional.length === 0)
+		throw new Error("Usage: luuna-missions close <id> [ids...] [--reason text]");
 
 	const reason = typeof flags.reason === "string" ? flags.reason : undefined;
 	const ids = positional;
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	const closed: string[] = [];
 
 	// Lock order matches plan-submit: plans (outer) → issues (inner) so plan

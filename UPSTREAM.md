@@ -15,3 +15,5 @@ Luuna changes include branding, private package metadata, safe installation with
 This maintained distribution now lives in https://github.com/brodynelly/luuna-missions. Luuna consumes it as an exact-commit Git submodule. The package remains private and unpublished. The component-scoped history was extracted with git subtree split; the original pre-branding history remains in brodynelly/luuna at the import source recorded above. See MIGRATION.md.
 
 Imported agent instructions and authoring metadata were preserved locally before removal from the working tree. They must not be loaded as Luuna project state. Historical documentation remains reference material; current component development starts with this repository's AGENTS.md. Luuna runtime policy remains in the Luuna repository.
+
+Layout note (October 22, 2026): the on-disk project directory, bin aliases and environment-variable prefix were later renamed to the Luuna layout (`.luuna/missions/`, `luuna-missions`/`lm`, `LUUNA_MISSIONS_*`). The JSONL record format remains compatible with upstream; see MIGRATION.md and CHANGELOG.md.

@@ -22,7 +22,7 @@ let id1: string;
 let id2: string;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-label-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-label-test-"));
 	await run(["init"], tmpDir);
 
 	const c1 = await runJson<{ success: boolean; id: string }>(
@@ -41,7 +41,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd label add", () => {
+describe("luuna-missions label add", () => {
 	test("adds a single label", async () => {
 		const result = await runJson<{ success: boolean }>(["label", "add", id1, "bug"], tmpDir);
 		expect(result.success).toBe(true);
@@ -91,7 +91,7 @@ describe("sd label add", () => {
 	});
 });
 
-describe("sd label remove", () => {
+describe("luuna-missions label remove", () => {
 	beforeEach(async () => {
 		await run(["label", "add", id1, "bug", "ui", "urgent"], tmpDir);
 	});
@@ -129,7 +129,7 @@ describe("sd label remove", () => {
 	});
 });
 
-describe("sd label list", () => {
+describe("luuna-missions label list", () => {
 	test("lists labels for an issue", async () => {
 		await run(["label", "add", id1, "bug", "ui"], tmpDir);
 		const result = await runJson<{ success: boolean; labels: string[] }>(
@@ -155,7 +155,7 @@ describe("sd label list", () => {
 	});
 });
 
-describe("sd label list-all", () => {
+describe("luuna-missions label list-all", () => {
 	test("collects labels across all issues", async () => {
 		await run(["label", "add", id1, "bug", "ui"], tmpDir);
 		await run(["label", "add", id2, "bug", "backend"], tmpDir);
@@ -180,7 +180,7 @@ describe("sd label list-all", () => {
 	});
 });
 
-describe("sd create --labels", () => {
+describe("luuna-missions create --labels", () => {
 	test("creates issue with labels", async () => {
 		const result = await runJson<{ success: boolean; id: string }>(
 			["create", "--title", "Labeled issue", "--labels", "bug,ui"],
@@ -197,7 +197,7 @@ describe("sd create --labels", () => {
 	});
 });
 
-describe("sd update label flags", () => {
+describe("luuna-missions update label flags", () => {
 	test("--add-label adds labels", async () => {
 		await run(["update", id1, "--add-label", "bug,ui"], tmpDir);
 		const show = await runJson<{ success: boolean; issue: { labels?: string[] } }>(
@@ -242,7 +242,7 @@ describe("sd update label flags", () => {
 	});
 });
 
-describe("sd list label filters", () => {
+describe("luuna-missions list label filters", () => {
 	beforeEach(async () => {
 		await run(["label", "add", id1, "bug", "ui"], tmpDir);
 		await run(["label", "add", id2, "bug", "backend"], tmpDir);
@@ -295,7 +295,7 @@ describe("sd list label filters", () => {
 	});
 });
 
-describe("sd stats with labels", () => {
+describe("luuna-missions stats with labels", () => {
 	test("includes byLabel in stats", async () => {
 		await run(["label", "add", id1, "bug", "ui"], tmpDir);
 		await run(["label", "add", id2, "bug"], tmpDir);

@@ -11,7 +11,7 @@ let invocationLog: string;
 let originalPath: string | undefined;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-record-decision-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-record-decision-"));
 	binDir = join(tmpDir, "bin");
 	await mkdir(binDir, { recursive: true });
 	invocationLog = join(tmpDir, "ml-invocations.log");
@@ -106,7 +106,7 @@ async function createSeedWithLabel(cwd: string, title: string, label: string): P
 }
 
 const VALID_CONTEXT =
-	"This work matters because we need to enable structured planning for AI agents using seeds.";
+	"This work matters because we need to enable structured planning for AI agents using missions.";
 
 function validPlan(approach: string): unknown {
 	return {
@@ -131,7 +131,7 @@ async function writePlan(cwd: string, plan: unknown): Promise<string> {
 	return path;
 }
 
-describe("sd plan submit --record-decision", () => {
+describe("luuna-missions plan submit --record-decision", () => {
 	test("invokes ml record with documented args when ml + domain available", async () => {
 		await writeFakeMl({});
 		const seedId = await createSeedWithLabel(tmpDir, "Add OAuth login", "commands");
@@ -156,7 +156,7 @@ describe("sd plan submit --record-decision", () => {
 		const idx = (flag: string): number => args.indexOf(flag);
 		expect(args[idx("--type") + 1]).toBe("decision");
 		expect(args[idx("--rationale") + 1]).toBe("Use OAuth library");
-		expect(args[idx("--evidence-seeds") + 1]).toBe(out.plan_id);
+		expect(args[idx("--evidence-missions") + 1]).toBe(out.plan_id);
 		// --title must be present (mulch requires it for decision records).
 		expect(idx("--title")).toBeGreaterThanOrEqual(0);
 		// --json is appended so we can parse the recorded mulch id from stdout.
@@ -213,7 +213,7 @@ describe("sd plan submit --record-decision", () => {
 		expect(res.stderr.toLowerCase()).toContain("ml record failed");
 
 		// Plan row was still persisted atomically.
-		const plansFile = join(tmpDir, ".seeds", "plans.jsonl");
+		const plansFile = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const raw = await readFile(plansFile, "utf8");
 		const lines = raw.split("\n").filter((l) => l.length > 0);
 		expect(lines.length).toBe(1);

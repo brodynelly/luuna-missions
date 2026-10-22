@@ -1,4 +1,4 @@
-// Priority parsing + validation, shared between `sd create` and `sd tpl step add`.
+// Priority parsing + validation, shared between `luuna-missions create` and `luuna-missions tpl step add`.
 //
 // Accepts either bare digits (`"2"`) or the `P`-prefixed shorthand (`"P2"`,
 // case-insensitive). Returns NaN for unparseable input so callers can produce a

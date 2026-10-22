@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { collect, collectRepeated, parseIntent } from "../intent.ts";
 import { outputJson, printSuccess } from "../output.ts";
 import { affectedPlanIds, applyPlanTransitions } from "../plan-lifecycle.ts";
@@ -75,14 +75,14 @@ function resolveClaimant(flags: Record<string, string | boolean>): string {
 	return as;
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const id = args.find((a) => !a.startsWith("--"));
-	if (!id) throw new Error("Usage: sd update <id> [flags]");
+	if (!id) throw new Error("Usage: luuna-missions update <id> [flags]");
 
 	const flags = parseArgs(args);
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	let updated: Issue | undefined;
 
 	const claim = flags.claim === true;
@@ -120,7 +120,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 			}
 			patch.status = s as Issue["status"];
 			// Reopening (status moving away from "closed"): drop stale close metadata
-			// so `sd show` doesn't display a phantom closedAt/closeReason on an open
+			// so `luuna-missions show` doesn't display a phantom closedAt/closeReason on an open
 			// issue. JSON.stringify omits keys with `undefined` values, so the spread
 			// `{...issue, ...patch}` followed by writeIssues clears them on disk.
 			if (patch.status !== "closed") {

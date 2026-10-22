@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Command } from "commander";
-import { findSeedsDir, projectRootFromSeedsDir } from "../config.ts";
+import { findMissionsDir, projectRootFromMissionsDir } from "../config.ts";
 import { outputJson } from "../output.ts";
 import { loadPlanContext } from "../plan-context.ts";
 import { sortIssues } from "../sort.ts";
@@ -72,87 +72,103 @@ const GENERIC_GATES = "the project's quality gates (tests, lint, typecheck)";
 function buildFull(gates: string | null): PrimeSectionsFull {
 	return {
 		mode: "full",
-		title: "Seeds Workflow Context",
-		contextRecovery: "Run `sd prime` after compaction, clear, or new session",
+		title: "Missions Workflow Context",
+		contextRecovery: "Run `luuna-missions prime` after compaction, clear, or new session",
 		closeProtocol: {
 			warning: 'Before saying "done", run this checklist:',
 			steps: [
-				"Close completed issues:    sd close <id1> <id2> ...",
-				'File remaining work:       sd create --title "..." --from <id>',
+				"Close completed issues:    luuna-missions close <id1> <id2> ...",
+				'File remaining work:       luuna-missions create --title "..." --from <id>',
 				`Run quality gates:         ${gates ?? GENERIC_GATES}`,
-				"Commit issue changes:      sd sync",
+				"Commit issue changes:      luuna-missions sync",
 			],
 			footer: "Then push or open a PR as the repo's conventions say.",
 		},
 		rules: [
-			"**Track durable work in seeds** (`sd create`, `sd ready`, `sd close`), not markdown task files. In-session checklists (TodoWrite) are fine.",
-			"**Claim before starting**: `sd update <id> --claim` (atomic; fails if someone else has it)",
-			"**Never hand-edit `.seeds/*.jsonl`**: `sd` commands lock, validate, and dedup; hand edits skip all three",
+			"**Track durable work in missions** (`luuna-missions create`, `luuna-missions ready`, `luuna-missions close`), not markdown task files. In-session checklists (TodoWrite) are fine.",
+			"**Claim before starting**: `luuna-missions update <id> --claim` (atomic; fails if someone else has it)",
+			"**Never hand-edit `.luuna/missions/*.jsonl`**: `luuna-missions` commands lock, validate, and dedup; hand edits skip all three",
 		],
 		commandGroups: [
 			{
 				name: "Finding Work",
 				commands: [
-					{ command: "sd ready", description: "Show issues ready to work (no blockers)" },
-					{ command: "sd list --status=in_progress", description: "Active work" },
-					{ command: "sd show <id> [<id2> ...]", description: "Detailed issue view" },
-					{ command: "sd search <query>", description: "Full-text search" },
+					{
+						command: "luuna-missions ready",
+						description: "Show issues ready to work (no blockers)",
+					},
+					{ command: "luuna-missions list --status=in_progress", description: "Active work" },
+					{ command: "luuna-missions show <id> [<id2> ...]", description: "Detailed issue view" },
+					{ command: "luuna-missions search <query>", description: "Full-text search" },
 				],
 			},
 			{
 				name: "Creating & Updating",
 				commands: [
 					{
-						command: 'sd create --title="..." --type=task|bug|feature|epic --priority=2',
+						command:
+							'luuna-missions create --title="..." --type=task|bug|feature|epic --priority=2',
 						description: "New issue (priority 0-4, 0=critical)",
 					},
 					{
-						command: "sd update <id> --claim --as <agent>",
+						command: "luuna-missions update <id> --claim --as <agent>",
 						description: "Claim work atomically (fails if already taken)",
 					},
 					{
-						command: 'sd create --title="..." --from <id>',
+						command: 'luuna-missions create --title="..." --from <id>',
 						description: "File work discovered while on <id> (non-blocking provenance)",
 					},
-					{ command: "sd close <id1> <id2> ...", description: "Close one or more issues" },
+					{
+						command: "luuna-missions close <id1> <id2> ...",
+						description: "Close one or more issues",
+					},
 				],
 			},
 			{
 				name: "Dependencies & Blocking",
 				commands: [
-					{ command: "sd dep add <issue> <depends-on>", description: "Add dependency" },
-					{ command: "sd blocked", description: "Show all blocked issues" },
+					{ command: "luuna-missions dep add <issue> <depends-on>", description: "Add dependency" },
+					{ command: "luuna-missions blocked", description: "Show all blocked issues" },
 				],
 			},
 			{
 				name: "Labels",
 				commands: [
-					{ command: "sd label add <id> bug ui", description: "Add labels to an issue" },
-					{ command: "sd list --label=bug", description: "Filter by label" },
+					{
+						command: "luuna-missions label add <id> bug ui",
+						description: "Add labels to an issue",
+					},
+					{ command: "luuna-missions list --label=bug", description: "Filter by label" },
 				],
 			},
 			{
 				name: "Sync & Project Health",
 				commands: [
-					{ command: "sd sync", description: "Stage and commit .seeds/ changes" },
-					{ command: "sd doctor", description: "Check for data integrity issues" },
+					{
+						command: "luuna-missions sync",
+						description: "Stage and commit .luuna/missions/ changes",
+					},
+					{ command: "luuna-missions doctor", description: "Check for data integrity issues" },
 				],
 			},
 			{
 				name: "Planning",
 				notes: [
-					"Use `sd plan` when work is large or ambiguous; submit spawns one child seed per step. For small, well-scoped tasks, just `sd create`.",
+					"Use `luuna-missions plan` when work is large or ambiguous; submit spawns one child seed per step. For small, well-scoped tasks, just `luuna-missions create`.",
 				],
 				commands: [
 					{
-						command: "sd plan prompt <seed-id>",
+						command: "luuna-missions plan prompt <seed-id>",
 						description: "Emit prompt JSON for the LLM to fill",
 					},
 					{
-						command: "sd plan submit <seed-id> --plan <file>",
+						command: "luuna-missions plan submit <seed-id> --plan <file>",
 						description: "Validate + spawn children",
 					},
-					{ command: "sd plan show <pl-id>", description: "Sections, children, nested sub-plans" },
+					{
+						command: "luuna-missions plan show <pl-id>",
+						description: "Sections, children, nested sub-plans",
+					},
 				],
 			},
 		],
@@ -160,16 +176,16 @@ function buildFull(gates: string | null): PrimeSectionsFull {
 			{
 				name: "Starting work",
 				commands: [
-					"sd ready                    # Find available work",
-					"sd show <id>                # Review issue details",
-					"sd update <id> --claim      # Claim it",
+					"luuna-missions ready                    # Find available work",
+					"luuna-missions show <id>                # Review issue details",
+					"luuna-missions update <id> --claim      # Claim it",
 				],
 			},
 			{
 				name: "Completing work",
 				commands: [
-					"sd close <id1> <id2> ...    # Close all completed issues at once",
-					"sd sync                     # Stage + commit .seeds/",
+					"luuna-missions close <id1> <id2> ...    # Close all completed issues at once",
+					"luuna-missions sync                     # Stage + commit .luuna/missions/",
 				],
 			},
 		],
@@ -179,23 +195,23 @@ function buildFull(gates: string | null): PrimeSectionsFull {
 function buildCompact(gates: string | null): PrimeSectionsCompact {
 	return {
 		mode: "compact",
-		title: "Seeds Quick Reference",
+		title: "Missions Quick Reference",
 		commands: [
-			{ command: "sd ready", description: "Find unblocked work" },
-			{ command: "sd show <id> [id...]", description: "View one or more issues" },
+			{ command: "luuna-missions ready", description: "Find unblocked work" },
+			{ command: "luuna-missions show <id> [id...]", description: "View one or more issues" },
 			{
-				command: 'sd create --title "..."',
+				command: 'luuna-missions create --title "..."',
 				description: "Create issue (--type, --priority, --from)",
 			},
-			{ command: "sd update <id> --claim", description: "Claim work (atomic)" },
-			{ command: "sd close <id>", description: "Complete work" },
-			{ command: "sd dep add <a> <b>", description: "a depends on b" },
-			{ command: "sd plan prompt <seed>", description: "Plan large/ambiguous work" },
-			{ command: "sd sync", description: "Stage + commit .seeds/" },
+			{ command: "luuna-missions update <id> --claim", description: "Claim work (atomic)" },
+			{ command: "luuna-missions close <id>", description: "Complete work" },
+			{ command: "luuna-missions dep add <a> <b>", description: "a depends on b" },
+			{ command: "luuna-missions plan prompt <seed>", description: "Plan large/ambiguous work" },
+			{ command: "luuna-missions sync", description: "Stage + commit .luuna/missions/" },
 		],
 		planningNote:
-			"**Planning:** Use `sd plan` for ambiguous or large work — built-in templates: `feature`, `bug`, `refactor`.",
-		closingNote: `**Before finishing:** \`sd close <ids>\`, run ${gates ? `\`${gates}\`` : GENERIC_GATES}, \`sd sync\`; push per repo conventions. Never hand-edit \`.seeds/*.jsonl\`.`,
+			"**Planning:** Use `luuna-missions plan` for ambiguous or large work — built-in templates: `feature`, `bug`, `refactor`.",
+		closingNote: `**Before finishing:** \`luuna-missions close <ids>\`, run ${gates ? `\`${gates}\`` : GENERIC_GATES}, \`luuna-missions sync\`; push per repo conventions. Never hand-edit \`.luuna/missions/*.jsonl\`.`,
 	};
 }
 
@@ -225,9 +241,9 @@ function ref(i: Issue): PrimeIssueRef {
 	};
 }
 
-async function loadState(seedsDir: string): Promise<PrimeState> {
-	const issues = await readIssues(seedsDir);
-	const ready = sortIssues(readyIssues(issues, await loadPlanContext(seedsDir)), "priority");
+async function loadState(missionsDir: string): Promise<PrimeState> {
+	const issues = await readIssues(missionsDir);
+	const ready = sortIssues(readyIssues(issues, await loadPlanContext(missionsDir)), "priority");
 	return {
 		inProgress: sortIssues(
 			issues.filter((i) => i.status === "in_progress"),
@@ -353,20 +369,20 @@ export function renderPrimeSections(sections: PrimeSections): string {
 	return sections.mode === "compact" ? renderCompact(sections) : renderFull(sections);
 }
 
-async function findSeedsDirOrNull(): Promise<string | null> {
+async function findMissionsDirOrNull(): Promise<string | null> {
 	try {
-		return await findSeedsDir();
+		return await findMissionsDir();
 	} catch {
-		return null; // No seeds dir — static template only, no live state.
+		return null; // No missions dir — static template only, no live state.
 	}
 }
 
 // Live state is best effort: prime runs as a SessionStart hook, where a
 // failure must never block the session.
-async function loadStateSafe(seedsDir: string | null): Promise<PrimeState | null> {
-	if (!seedsDir) return null;
+async function loadStateSafe(missionsDir: string | null): Promise<PrimeState | null> {
+	if (!missionsDir) return null;
 	try {
-		return await loadState(seedsDir);
+		return await loadState(missionsDir);
 	} catch {
 		return null;
 	}
@@ -374,10 +390,10 @@ async function loadStateSafe(seedsDir: string | null): Promise<PrimeState | null
 
 // A custom PRIME.md is opaque — we can't structurally parse it, so sections is null.
 async function primeContent(
-	seedsDir: string | null,
+	missionsDir: string | null,
 	sections: PrimeSections,
 ): Promise<{ sections: PrimeSections | null; content: string }> {
-	const custom = seedsDir ? Bun.file(join(seedsDir, PRIME_FILE)) : null;
+	const custom = missionsDir ? Bun.file(join(missionsDir, PRIME_FILE)) : null;
 	if (custom && (await custom.exists())) return { sections: null, content: await custom.text() };
 	return { sections, content: renderPrimeSections(sections) };
 }
@@ -395,8 +411,8 @@ export async function run(args: string[]): Promise<void> {
 	const compact = args.includes("--compact");
 	const exportMode = args.includes("--export");
 
-	const seedsDir = await findSeedsDirOrNull();
-	const projectRoot = seedsDir ? projectRootFromSeedsDir(seedsDir) : process.cwd();
+	const missionsDir = await findMissionsDirOrNull();
+	const projectRoot = missionsDir ? projectRootFromMissionsDir(missionsDir) : process.cwd();
 	const defaults = compact ? buildCompactSections(projectRoot) : buildFullSections(projectRoot);
 
 	// --export always outputs the default template, without live state.
@@ -410,8 +426,8 @@ export async function run(args: string[]): Promise<void> {
 		return;
 	}
 
-	const { sections, content } = await primeContent(seedsDir, defaults);
-	const state = await loadStateSafe(seedsDir);
+	const { sections, content } = await primeContent(missionsDir, defaults);
+	const state = await loadStateSafe(missionsDir);
 	if (jsonMode) {
 		await outputJson({ success: true, command: "prime", sections, state, content });
 	} else {

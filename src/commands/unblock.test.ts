@@ -23,7 +23,7 @@ let id2: string;
 let id3: string;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-unblock-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-unblock-test-"));
 	await run(["init"], tmpDir);
 
 	const c1 = await runJson<{ success: boolean; id: string }>(
@@ -47,7 +47,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd block", () => {
+describe("luuna-missions block", () => {
 	test("adds a blocker to an issue", async () => {
 		const result = await runJson<{ success: boolean; issueId: string; blockerId: string }>(
 			["block", id2, "--by", id1],
@@ -103,7 +103,7 @@ describe("sd block", () => {
 	});
 });
 
-describe("sd unblock --from", () => {
+describe("luuna-missions unblock --from", () => {
 	beforeEach(async () => {
 		await run(["block", id2, "--by", id1], tmpDir);
 	});
@@ -156,7 +156,7 @@ describe("sd unblock --from", () => {
 	});
 });
 
-describe("sd unblock --all", () => {
+describe("luuna-missions unblock --all", () => {
 	beforeEach(async () => {
 		// id3 is blocked by both id1 (closed) and id2 (open)
 		await run(["block", id3, "--by", id1], tmpDir);

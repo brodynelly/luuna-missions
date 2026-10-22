@@ -9,7 +9,7 @@ let binDir: string;
 let originalPath: string | undefined;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-plan-mulch-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-plan-mulch-"));
 	binDir = join(tmpDir, "bin");
 	await mkdir(binDir, { recursive: true });
 	originalPath = process.env.PATH;

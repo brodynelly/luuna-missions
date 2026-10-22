@@ -1,8 +1,8 @@
-# Seeds Operations Runbook
+# Missions Operations Runbook
 
-This runbook covers seeds' operational procedures only:
+This runbook covers missions' operational procedures only:
 
-1. Cutting a release of `@os-eco/seeds-cli` to npm.
+1. Cutting a release of `@luuna/missions-cli` to npm.
 2. Triaging a failed publish.
 3. Rolling back a bad release.
 
@@ -15,7 +15,7 @@ record see `SPEC.md`. This is a procedural document — read it as
 - `bun --version` ≥ the `engines.bun` floor in `package.json` (≥ 1.0).
 - `gh auth status` → authenticated, with `repo` + `workflow` scopes.
 - `git remote -v` shows the canonical origin
-  (`github.com/jayminwest/seeds`).
+  (`github.com/brodynelly/luuna-missions`).
 - `npm whoami` → `jayminwest`, with 2FA enabled, if you ever need a
   manual publish.
 - Local tree on `main`, fully up to date, `git status` clean.
@@ -31,18 +31,18 @@ Cut releases from `main` only. Never tag a feature branch.
 
 Follow [SemVer](https://semver.org):
 
-- **MAJOR** — backward-incompatible change to the `sd` CLI surface or
+- **MAJOR** — backward-incompatible change to the `luuna-missions` CLI surface or
   the JSONL schema (field removed/renamed, command removed).
 - **MINOR** — new command, new optional flag, additive schema field.
 - **PATCH** — bug fix, doc-only change, internal refactor, dependency
   bump that doesn't change the surface.
 
-While seeds is pre-1.0, breaking changes go in MINOR and additive
+While missions is pre-1.0, breaking changes go in MINOR and additive
 changes go in PATCH.
 
 ### 1.2 Bump the version in both sources of truth
 
-Seeds' version lives in **two** files, kept in sync and asserted equal
+Missions' version lives in **two** files, kept in sync and asserted equal
 by the publish workflow:
 
 - `package.json` — the `"version"` field.
@@ -64,7 +64,7 @@ both files. Do not edit only one — a mismatch fails the release job.
 `## [X.Y.Z] — YYYY-MM-DD` heading. The publish workflow extracts this
 section verbatim for the GitHub release body, so the heading format
 matters. Group under Keep-a-Changelog headings (Added / Changed /
-Fixed / Removed / Security) and link each line to its `seeds-XXXX`,
+Fixed / Removed / Security) and link each line to its `missions-XXXX`,
 `mx-XXXX`, or `#NNN` tracker.
 
 ### 1.4 Final gate check
@@ -86,7 +86,7 @@ proceeding.
 
 ```bash
 git add package.json src/version.ts CHANGELOG.md
-git commit -m "release: seeds X.Y.Z"
+git commit -m "release: missions X.Y.Z"
 git push origin main
 ```
 
@@ -96,7 +96,7 @@ Pushing triggers `.github/workflows/publish.yml`, which:
 2. Compares `package.json` `"version"` to the version published on npm.
    If they match it short-circuits to a no-op; otherwise it proceeds.
 3. Asserts `package.json` and `src/version.ts` agree on `X.Y.Z`.
-4. Publishes `@os-eco/seeds-cli@X.Y.Z` with `--access public`.
+4. Publishes `@luuna/missions-cli@X.Y.Z` with `--access public`.
 5. Tags `vX.Y.Z` and pushes the tag.
 6. Creates a GitHub release using the matching `CHANGELOG.md` section.
 
@@ -111,16 +111,16 @@ gh run watch
 ```bash
 git pull --tags
 gh release view vX.Y.Z            # release page renders
-npm view @os-eco/seeds-cli version   # reports X.Y.Z
+npm view @luuna/missions-cli version   # reports X.Y.Z
 ```
 
 Smoke-install in a clean dir:
 
 ```bash
-mkdir /tmp/seeds-smoke && cd /tmp/seeds-smoke
-bun install @os-eco/seeds-cli
-bunx sd --version                 # prints X.Y.Z
-bunx sd --help                    # lists subcommands
+mkdir /tmp/missions-smoke && cd /tmp/missions-smoke
+bun install @luuna/missions-cli
+bunx luuna-missions --version                 # prints X.Y.Z
+bunx luuna-missions --help                    # lists subcommands
 ```
 
 ## 2. Triage a failing publish
@@ -160,7 +160,7 @@ git push origin main
 If the publish half-succeeded (npm published but the GitHub release or
 tag is missing), **do not unpublish**. Recover the missing half by hand
 (`gh release create vX.Y.Z`, or `git tag vX.Y.Z <sha> && git push origin
-vX.Y.Z`) and note the deviation in a `seeds-XXXX` tracker.
+vX.Y.Z`) and note the deviation in a `missions-XXXX` tracker.
 
 ## 3. Rollback
 
@@ -171,7 +171,7 @@ immutable. Rollback means shipping a corrective version.
 
 - **Critical** (data loss, store corruption, total CLI breakage): cut a
   reverting patch within 30 minutes.
-- **High** (regression on a common path like `sd ready` or `sd close`):
+- **High** (regression on a common path like `luuna-missions ready` or `luuna-missions close`):
   cut a patch within the day.
 - **Medium / Low**: fix forward on the next planned release.
 
@@ -200,7 +200,7 @@ patch` if so). Then follow §1.2–§1.5 to ship the follow-up. In
 
 ### Fixed
 - Reverted <one-line bad-commit summary> from X.Y.Z which caused
-  <symptom>. Tracking in seeds-XXXX / #NNN.
+  <symptom>. Tracking in missions-XXXX / #NNN.
 ```
 
 ### 3.4 Deprecate the bad version
@@ -210,7 +210,7 @@ after that npm forbids unpublish, so deprecate instead. Prefer
 deprecation either way — `unpublish` breaks reproducible installs:
 
 ```bash
-npm deprecate @os-eco/seeds-cli@X.Y.Z \
+npm deprecate @luuna/missions-cli@X.Y.Z \
   "Critical bug; install X.Y.(Z+1) or later. See CHANGELOG.md."
 ```
 
@@ -218,7 +218,7 @@ npm deprecate @os-eco/seeds-cli@X.Y.Z \
 
 - Add a banner to the `vX.Y.Z` GitHub release notes pointing at the
   fixed version.
-- Update the `seeds-XXXX` tracker with root cause + remediation links.
+- Update the `missions-XXXX` tracker with root cause + remediation links.
 - If a downstream consumer (warren, overstory) pinned the bad version,
   open an issue there recommending the upgrade.
 
@@ -230,6 +230,6 @@ gh release list --limit 5
 gh run list --workflow=publish.yml --limit 5
 gh run view <run-id> --log-failed
 gh run rerun <run-id> --failed
-npm view @os-eco/seeds-cli versions --json
-npm view @os-eco/seeds-cli dist-tags
+npm view @luuna/missions-cli versions --json
+npm view @luuna/missions-cli dist-tags
 ```

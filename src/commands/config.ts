@@ -1,10 +1,10 @@
-// `sd config` — schema-driven read/write surface for `.seeds/config.yaml`.
+// `luuna-missions config` — schema-driven read/write surface for `.luuna/missions/config.yaml`.
 //
 // Designed as warren V2's wire contract (warren ROADMAP R-10):
-//   - `sd config schema --json` emits the JSON Schema (warren auto-renders a form)
-//   - `sd config show [--path <p>]` reads the current value
-//   - `sd config set <path> <value>` validates + writes atomically (YAML-parsed)
-//   - `sd config unset <path>` removes a value
+//   - `luuna-missions config schema --json` emits the JSON Schema (warren auto-renders a form)
+//   - `luuna-missions config show [--path <p>]` reads the current value
+//   - `luuna-missions config set <path> <value>` validates + writes atomically (YAML-parsed)
+//   - `luuna-missions config unset <path>` removes a value
 //
 // Writes hold the config.yaml advisory lock; mutations validate the entire
 // post-write file against configSchema() before persisting, so a partial set
@@ -14,7 +14,7 @@ import { randomBytes } from "node:crypto";
 import { renameSync } from "node:fs";
 import { join } from "node:path";
 import { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { configSchema } from "../config-schema.ts";
 import { accent, muted, outputJson, printSuccess, writeStdout } from "../output.ts";
 import { withLock } from "../store.ts";
@@ -22,8 +22,8 @@ import { CONFIG_FILE } from "../types.ts";
 import { compileSchema } from "../validation.ts";
 import { parseScalarOrFlow, parseYaml, stringifyYaml, type YamlValue } from "../yaml.ts";
 
-function configPath(seedsDir: string): string {
-	return join(seedsDir, CONFIG_FILE);
+function configPath(missionsDir: string): string {
+	return join(missionsDir, CONFIG_FILE);
 }
 
 function pathParts(path: string): string[] {
@@ -98,17 +98,17 @@ function validateConfig(data: unknown): void {
 	}
 }
 
-async function readRawConfig(seedsDir: string): Promise<Record<string, YamlValue>> {
-	const file = Bun.file(configPath(seedsDir));
+async function readRawConfig(missionsDir: string): Promise<Record<string, YamlValue>> {
+	const file = Bun.file(configPath(missionsDir));
 	if (!(await file.exists())) {
-		throw new Error(`Config not found at ${configPath(seedsDir)}`);
+		throw new Error(`Config not found at ${configPath(missionsDir)}`);
 	}
 	const content = await file.text();
 	return parseYaml(content);
 }
 
-async function writeRawConfig(seedsDir: string, data: Record<string, YamlValue>): Promise<void> {
-	const path = configPath(seedsDir);
+async function writeRawConfig(missionsDir: string, data: Record<string, YamlValue>): Promise<void> {
+	const path = configPath(missionsDir);
 	const tmpPath = `${path}.tmp.${randomBytes(4).toString("hex")}`;
 	await Bun.write(tmpPath, stringifyYaml(data));
 	renameSync(tmpPath, path);
@@ -129,7 +129,7 @@ async function runSchema(jsonMode: boolean): Promise<void> {
 }
 
 async function runShow(pathArg: string | undefined, jsonMode: boolean): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const raw = await readRawConfig(dir);
 
 	if (pathArg) {
@@ -158,7 +158,7 @@ async function runShow(pathArg: string | undefined, jsonMode: boolean): Promise<
 }
 
 async function runSet(pathArg: string, valueArg: string, jsonMode: boolean): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const parts = pathParts(pathArg);
 	const value = parseScalarOrFlow(valueArg);
 
@@ -177,7 +177,7 @@ async function runSet(pathArg: string, valueArg: string, jsonMode: boolean): Pro
 }
 
 async function runUnset(pathArg: string, jsonMode: boolean): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const parts = pathParts(pathArg);
 
 	let removed = false;
@@ -199,11 +199,13 @@ async function runUnset(pathArg: string, jsonMode: boolean): Promise<void> {
 }
 
 export function register(program: Command): void {
-	const config = new Command("config").description("Read, write, and inspect .seeds/config.yaml");
+	const config = new Command("config").description(
+		"Read, write, and inspect .luuna/missions/config.yaml",
+	);
 
 	config
 		.command("schema")
-		.description("Emit the JSON Schema for .seeds/config.yaml")
+		.description("Emit the JSON Schema for .luuna/missions/config.yaml")
 		.option("--json", "Compact single-line JSON (default is pretty-printed)")
 		.action(async (opts: { json?: boolean }) => {
 			await runSchema(opts.json === true);

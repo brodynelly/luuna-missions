@@ -1,5 +1,5 @@
 // Plan status state machine (PLAN_SPEC.md:109-127). Plan status is derived
-// from its children — `sd plan submit` sets the initial `approved` state,
+// from its children — `luuna-missions plan submit` sets the initial `approved` state,
 // then update.ts/close.ts call `applyPlanTransitions` to recompute on every
 // child status change.
 //

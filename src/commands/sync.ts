@@ -1,7 +1,7 @@
 import type { Command } from "commander";
-import { findSeedsDir, isInsideWorktree, projectRootFromSeedsDir } from "../config.ts";
+import { findMissionsDir, isInsideWorktree, projectRootFromMissionsDir } from "../config.ts";
 import { outputJson, printSuccess, printWarning } from "../output.ts";
-import { SEEDS_DIR_NAME } from "../types.ts";
+import { MISSIONS_DIR } from "../types.ts";
 
 function spawnSync(
 	cmd: string[],
@@ -13,16 +13,16 @@ function spawnSync(
 	return { stdout, stderr, exitCode: result.exitCode ?? 0 };
 }
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const statusOnly = args.includes("--status");
 	const dryRun = args.includes("--dry-run");
 
-	const dir = seedsDir ?? (await findSeedsDir());
-	const projectRoot = projectRootFromSeedsDir(dir);
+	const dir = missionsDir ?? (await findMissionsDir());
+	const projectRoot = projectRootFromMissionsDir(dir);
 
 	// Worktree guard: skip commit when running from a worktree
-	if (!seedsDir && isInsideWorktree(process.cwd())) {
+	if (!missionsDir && isInsideWorktree(process.cwd())) {
 		const msg = "Inside a git worktree — skipping commit. Issues are stored in the main repo.";
 		if (jsonMode) {
 			await outputJson({
@@ -39,7 +39,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 	}
 
 	const statusResult = spawnSync(
-		["git", "-C", projectRoot, "status", "--porcelain", `${SEEDS_DIR_NAME}/`],
+		["git", "-C", projectRoot, "status", "--porcelain", `${MISSIONS_DIR}/`],
 		projectRoot,
 	);
 
@@ -50,10 +50,10 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 			await outputJson({ success: true, command: "sync", hasChanges: !!changed, changes: changed });
 		} else {
 			if (changed) {
-				printSuccess("Uncommitted .seeds/ changes:");
+				printSuccess("Uncommitted .luuna/missions/ changes:");
 				console.log(changed);
 			} else {
-				printSuccess("No uncommitted .seeds/ changes.");
+				printSuccess("No uncommitted .luuna/missions/ changes.");
 			}
 		}
 		return;
@@ -75,7 +75,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 
 	if (dryRun) {
 		const date = new Date().toISOString().slice(0, 10);
-		const msg = `seeds: sync ${date}`;
+		const msg = `missions: sync ${date}`;
 		if (jsonMode) {
 			await outputJson({
 				success: true,
@@ -94,14 +94,14 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 	}
 
 	// Stage
-	const addResult = spawnSync(["git", "-C", projectRoot, "add", `${SEEDS_DIR_NAME}/`], projectRoot);
+	const addResult = spawnSync(["git", "-C", projectRoot, "add", `${MISSIONS_DIR}/`], projectRoot);
 	if (addResult.exitCode !== 0) {
 		throw new Error(`git add failed: ${addResult.stderr}`);
 	}
 
 	// Commit
 	const date = new Date().toISOString().slice(0, 10);
-	const msg = `seeds: sync ${date}`;
+	const msg = `missions: sync ${date}`;
 	const commitResult = spawnSync(["git", "-C", projectRoot, "commit", "-m", msg], projectRoot);
 	if (commitResult.exitCode !== 0) {
 		throw new Error(`git commit failed: ${commitResult.stderr}`);
@@ -117,7 +117,7 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 export function register(program: Command): void {
 	program
 		.command("sync")
-		.description("Stage and commit .seeds/ changes")
+		.description("Stage and commit .luuna/missions/ changes")
 		.option("--status", "Check status without committing")
 		.option("--dry-run", "Show what would be committed without committing")
 		.option("--json", "Output as JSON")

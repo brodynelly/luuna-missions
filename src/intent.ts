@@ -1,6 +1,6 @@
 // Issue.intent — links an issue to one or more roots ideas (r-xxxx).
 //
-// Seeds stores the ids and never resolves them: roots reads the top-level
+// Missions stores the ids and never resolves them: roots reads the top-level
 // `intent` field straight from issues.jsonl (a string for one id, a string[]
 // for several). The shape check matches the token roots recognises
 // (`r-` + 4..8 lowercase hex), so a stored id is never silently unlinkable.

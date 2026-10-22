@@ -4,7 +4,7 @@ import { Command } from "commander";
 import { formatElapsed, installTimingHook } from "./timing.ts";
 
 // The previous version of this file spawned `bun run src/index.ts stats
-// --timing` against a temp .seeds store. The hook is now exported as a small
+// --timing` against a temp .luuna/missions store. The hook is now exported as a small
 // pure-ish helper; we test the formatter directly and the hook against a
 // stub commander Program in-process. The end-to-end stderr-routing behavior
 // is still exercised by src/cli-smoke.test.ts.
@@ -70,7 +70,7 @@ describe("--timing hook", () => {
 	test("with --timing, postAction prints '⏱ <elapsed>' to stderr", async () => {
 		const program = buildProgram();
 		const { stderr } = await captureStderr(async () => {
-			await program.parseAsync(["bun", "sd", "--timing", "noop"]);
+			await program.parseAsync(["bun", "luuna-missions", "--timing", "noop"]);
 		});
 		expect(stderr).toMatch(/⏱ \d+(\.\d+)?(ms|s)/);
 	});
@@ -78,7 +78,7 @@ describe("--timing hook", () => {
 	test("without --timing, no timing line is emitted", async () => {
 		const program = buildProgram();
 		const { stderr } = await captureStderr(async () => {
-			await program.parseAsync(["bun", "sd", "noop"]);
+			await program.parseAsync(["bun", "luuna-missions", "noop"]);
 		});
 		expect(stderr).not.toContain("⏱");
 	});
@@ -95,7 +95,7 @@ describe("--timing hook", () => {
 		}) as typeof process.stdout.write;
 		try {
 			const { stderr } = await captureStderr(async () => {
-				await program.parseAsync(["bun", "sd", "--timing", "--json", "emit-json"]);
+				await program.parseAsync(["bun", "luuna-missions", "--timing", "--json", "emit-json"]);
 			});
 			const stdout = stdoutChunks.join("");
 			const parsed = JSON.parse(stdout) as { success: boolean };

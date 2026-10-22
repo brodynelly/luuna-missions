@@ -14,7 +14,7 @@ let binDir: string;
 let originalPath: string | undefined;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-plan-domain-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-plan-domain-"));
 	binDir = join(tmpDir, "bin");
 	await mkdir(binDir, { recursive: true });
 	originalPath = process.env.PATH;
@@ -51,7 +51,7 @@ exit 99
 
 function makeSeed(overrides: Partial<Issue> = {}): Issue {
 	return {
-		id: "seeds-test",
+		id: "missions-test",
 		title: "Test seed",
 		status: "open",
 		type: "task",

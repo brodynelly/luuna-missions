@@ -16,7 +16,7 @@ async function runJson<T>(args: string[], cwd: string): Promise<T> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-stats-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-stats-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -24,7 +24,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd stats", () => {
+describe("luuna-missions stats", () => {
 	test("empty store reports zeros via --json", async () => {
 		const out = await runJson<{
 			success: boolean;

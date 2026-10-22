@@ -1,14 +1,14 @@
-# Contributing to Seeds
+# Contributing to Missions
 
-Thanks for your interest in contributing to Seeds! This guide covers everything you need to get started.
+Thanks for your interest in contributing to Missions! This guide covers everything you need to get started.
 
 ## Getting Started
 
 1. **Fork** the repository on GitHub
 2. **Clone** your fork locally:
    ```bash
-   git clone https://github.com/<your-username>/seeds.git
-   cd seeds
+   git clone https://github.com/<your-username>/missions.git
+   cd missions
    ```
 3. **Install** dependencies:
    ```bash
@@ -64,7 +64,7 @@ Always run all three before submitting a PR.
 
 ## Reporting Issues
 
-Use [GitHub Issues](https://github.com/jayminwest/seeds/issues) for bug reports and feature requests. For security vulnerabilities, see [SECURITY.md](SECURITY.md).
+Use [GitHub Issues](https://github.com/brodynelly/luuna-missions/issues) for bug reports and feature requests. For security vulnerabilities, see [SECURITY.md](SECURITY.md).
 
 ## License
 

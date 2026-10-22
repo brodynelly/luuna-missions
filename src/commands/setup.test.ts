@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runCli } from "../test-harness.ts";
-import { syncSeedsHooks } from "./setup.ts";
+import { syncMissionsHooks } from "./setup.ts";
 
 let tmpDir: string;
 
@@ -16,7 +16,7 @@ async function readSettings(): Promise<Record<string, unknown>> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-setup-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-setup-test-"));
 	await runCli(["init"], tmpDir);
 });
 
@@ -25,20 +25,20 @@ afterEach(async () => {
 });
 
 const INSTALLED = {
-	SessionStart: [{ hooks: [{ type: "command", command: "sd prime --compact" }] }],
+	SessionStart: [{ hooks: [{ type: "command", command: "luuna-missions prime --compact" }] }],
 	PreToolUse: [
 		{
 			matcher: "Write|Edit|MultiEdit|NotebookEdit",
-			hooks: [{ type: "command", command: "sd guard" }],
+			hooks: [{ type: "command", command: "luuna-missions guard" }],
 		},
 	],
 };
 
-describe("sd setup claude", () => {
+describe("luuna-missions setup claude", () => {
 	test("installs SessionStart prime and PreToolUse guard hooks", async () => {
 		const { exitCode, stdout } = await runCli(["setup", "claude"], tmpDir);
 		expect(exitCode).toBe(0);
-		expect(stdout).toContain("Installed seeds hooks");
+		expect(stdout).toContain("Installed missions hooks");
 		expect((await readSettings()).hooks).toEqual(INSTALLED);
 	});
 
@@ -52,7 +52,7 @@ describe("sd setup claude", () => {
 		expect(await Bun.file(settingsFile()).text()).toBe(before);
 	});
 
-	test("keeps unrelated settings and hooks; replaces a stale sd hook", async () => {
+	test("keeps unrelated settings and hooks; replaces a stale luuna-missions hook", async () => {
 		await mkdir(join(tmpDir, ".claude"), { recursive: true });
 		await Bun.write(
 			settingsFile(),
@@ -61,7 +61,7 @@ describe("sd setup claude", () => {
 				hooks: {
 					SessionStart: [
 						{ hooks: [{ type: "command", command: "ml prime" }] },
-						{ hooks: [{ type: "command", command: "sd prime" }] },
+						{ hooks: [{ type: "command", command: "luuna-missions prime" }] },
 					],
 				},
 			}),
@@ -71,11 +71,11 @@ describe("sd setup claude", () => {
 		expect(s.model).toBe("opus");
 		expect((s.hooks as Record<string, unknown>).SessionStart).toEqual([
 			{ hooks: [{ type: "command", command: "ml prime" }] },
-			{ hooks: [{ type: "command", command: "sd prime --compact" }] },
+			{ hooks: [{ type: "command", command: "luuna-missions prime --compact" }] },
 		]);
 	});
 
-	test("--remove strips only seeds hooks and drops empty events", async () => {
+	test("--remove strips only missions hooks and drops empty events", async () => {
 		await mkdir(join(tmpDir, ".claude"), { recursive: true });
 		await Bun.write(
 			settingsFile(),
@@ -86,7 +86,7 @@ describe("sd setup claude", () => {
 						{
 							hooks: [
 								{ type: "command", command: "ml prime" },
-								{ type: "command", command: "sd prime --compact" },
+								{ type: "command", command: "luuna-missions prime --compact" },
 							],
 						},
 					],
@@ -94,7 +94,7 @@ describe("sd setup claude", () => {
 			}),
 		);
 		const { stdout } = await runCli(["setup", "claude", "--remove"], tmpDir);
-		expect(stdout).toContain("Removed seeds hooks");
+		expect(stdout).toContain("Removed missions hooks");
 		expect((await readSettings()).hooks).toEqual({
 			SessionStart: [{ hooks: [{ type: "command", command: "ml prime" }] }],
 		});
@@ -103,9 +103,9 @@ describe("sd setup claude", () => {
 	});
 
 	test("remove after install leaves no hooks key", () => {
-		const installed = syncSeedsHooks({ a: 1 }, false);
+		const installed = syncMissionsHooks({ a: 1 }, false);
 		expect(installed.changed).toBe(true);
-		const removed = syncSeedsHooks(installed.settings, true);
+		const removed = syncMissionsHooks(installed.settings, true);
 		expect(removed.settings).toEqual({ a: 1 });
 	});
 
@@ -116,8 +116,8 @@ describe("sd setup claude", () => {
 		expect(exitCode).toBe(1);
 		expect(stderr).toContain("nothing was written");
 		expect(await Bun.file(settingsFile()).text()).toBe("{ not json");
-		expect(() => syncSeedsHooks({ hooks: [] }, false)).toThrow("not an object");
-		expect(() => syncSeedsHooks({ hooks: { PreToolUse: {} } }, false)).toThrow("not an array");
+		expect(() => syncMissionsHooks({ hooks: [] }, false)).toThrow("not an object");
+		expect(() => syncMissionsHooks({ hooks: { PreToolUse: {} } }, false)).toThrow("not an array");
 	});
 
 	test("rejects unknown targets", async () => {

@@ -24,7 +24,7 @@ async function runJson<T = unknown>(args: string[], cwd: string): Promise<T> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-config-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-config-test-"));
 	const init = await run(["init"], tmpDir);
 	expect(init.exitCode).toBe(0);
 });
@@ -33,10 +33,10 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd config schema", () => {
+describe("luuna-missions config schema", () => {
 	test("emits valid JSON Schema with the expected top-level shape", () => {
 		const schema = configSchema();
-		expect(schema.$id).toBe("https://github.com/jayminwest/seeds/config.schema.json");
+		expect(schema.$id).toBe("https://github.com/brodynelly/luuna-missions/config.schema.json");
 		expect(schema.type).toBe("object");
 		expect(schema.required).toEqual(["project", "version"]);
 		expect(schema.additionalProperties).toBe(false);
@@ -97,11 +97,11 @@ describe("sd config schema", () => {
 		const { stdout, exitCode } = await run(["config", "schema"], tmpDir);
 		expect(exitCode).toBe(0);
 		const parsed = JSON.parse(stdout) as Record<string, unknown>;
-		expect(parsed.title).toBe("Seeds project config");
+		expect(parsed.title).toBe("Missions project config");
 	});
 });
 
-describe("sd config show", () => {
+describe("luuna-missions config show", () => {
 	test("shows full config as YAML by default", async () => {
 		const { stdout, exitCode } = await run(["config", "show"], tmpDir);
 		expect(exitCode).toBe(0);
@@ -139,7 +139,7 @@ describe("sd config show", () => {
 	});
 });
 
-describe("sd config set", () => {
+describe("luuna-missions config set", () => {
 	test("sets max_plan_depth (integer)", async () => {
 		const { exitCode } = await run(["config", "set", "max_plan_depth", "5"], tmpDir);
 		expect(exitCode).toBe(0);
@@ -218,17 +218,17 @@ describe("sd config set", () => {
 
 	test("persists changes to disk in YAML form", async () => {
 		await run(["config", "set", "max_plan_depth", "7"], tmpDir);
-		const onDisk = await readFile(join(tmpDir, ".seeds", "config.yaml"), "utf8");
+		const onDisk = await readFile(join(tmpDir, ".luuna/missions", "config.yaml"), "utf8");
 		expect(onDisk).toContain("max_plan_depth: 7");
 	});
 });
 
-describe("sd config unset", () => {
+describe("luuna-missions config unset", () => {
 	test("removes a top-level optional key", async () => {
 		await run(["config", "set", "max_plan_depth", "5"], tmpDir);
 		const { exitCode } = await run(["config", "unset", "max_plan_depth"], tmpDir);
 		expect(exitCode).toBe(0);
-		const onDisk = await readFile(join(tmpDir, ".seeds", "config.yaml"), "utf8");
+		const onDisk = await readFile(join(tmpDir, ".luuna/missions", "config.yaml"), "utf8");
 		expect(onDisk).not.toContain("max_plan_depth");
 	});
 

@@ -23,7 +23,7 @@ async function show(id: string, cwd: string): Promise<Issue> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-claim-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-claim-test-"));
 	await runCli(["init"], tmpDir);
 });
 
@@ -31,7 +31,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd update --claim", () => {
+describe("luuna-missions update --claim", () => {
 	test("claims an open unassigned issue: in_progress + assignee", async () => {
 		const id = await create("claim-1", tmpDir);
 		const { exitCode } = await runCli(["update", id, "--claim", "--as", "agent-a"], tmpDir);

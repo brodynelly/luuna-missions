@@ -1,6 +1,6 @@
 import { dirname } from "node:path";
 import { Command } from "commander";
-import { findSeedsDir, loadPlanTemplates, readConfig } from "../config.ts";
+import { findMissionsDir, loadPlanTemplates, readConfig } from "../config.ts";
 import { generateId } from "../id.ts";
 import { accent, brand, muted, outputJson, printSuccess } from "../output.ts";
 import { applyPlanBackref, buildPlanBackref, stripPlanBackref } from "../plan-backref.ts";
@@ -78,7 +78,7 @@ Plan file shape:
     }
   }
 
-The shape mirrors 'sd plan prompt': drop the plan_request wrapper, and
+The shape mirrors 'luuna-missions plan prompt': drop the plan_request wrapper, and
 sections is an object keyed by name (not the array of section metadata
 that the prompt emits). Section names and value kinds match the template.
 
@@ -190,7 +190,7 @@ Plan name resolution:
 	plan
 		.command("create <seed-id>")
 		.description(
-			"Create an adopt-only plan with zero spawned children (populate via 'sd plan adopt')",
+			"Create an adopt-only plan with zero spawned children (populate via 'luuna-missions plan adopt')",
 		)
 		.option("--name <text>", "Human-readable plan label (defaults to the seed title)")
 		.option("--template <name>", "Plan template name (defaults to the seed type's default)")
@@ -205,17 +205,17 @@ Plan name resolution:
 
 	plan
 		.command("adopt <plan-id> <seed-ids...>")
-		.description("Adopt existing open seeds into a plan (link-only; bumps plan revision)")
+		.description("Adopt existing open missions into a plan (link-only; bumps plan revision)")
 		.option(
 			"--step <i>",
-			"1-based step index within the plan blueprint; sets plan_step_index on adopted seeds",
+			"1-based step index within the plan blueprint; sets plan_step_index on adopted missions",
 		)
 		.option(
 			"--at <i>",
-			"1-based position in plan.children to insert the adopted seeds (default: append)",
+			"1-based position in plan.children to insert the adopted missions (default: append)",
 		)
-		.option("--before <seed>", "Insert the adopted seeds before this existing child seed")
-		.option("--after <seed>", "Insert the adopted seeds after this existing child seed")
+		.option("--before <seed>", "Insert the adopted missions before this existing child seed")
+		.option("--after <seed>", "Insert the adopted missions after this existing child seed")
 		.option("--json", "Output as JSON")
 		.action(
 			async (
@@ -243,7 +243,9 @@ Plan name resolution:
 
 	plan
 		.command("release <plan-id> <seed-ids...>")
-		.description("Release seeds from a plan (link-only; seeds stay open; bumps plan revision)")
+		.description(
+			"Release missions from a plan (link-only; missions stay open; bumps plan revision)",
+		)
 		.option("--json", "Output as JSON")
 		.action(async (planIdArg: string, seedIds: string[], opts: { json?: boolean }) => {
 			await runRelease(planIdArg, seedIds, {
@@ -271,7 +273,7 @@ Plan name resolution:
 			},
 		);
 
-	// `sd plan` (no subcommand) prints help and exits non-zero so scripted callers notice.
+	// `luuna-missions plan` (no subcommand) prints help and exits non-zero so scripted callers notice.
 	plan.action(() => {
 		plan.outputHelp();
 		process.exitCode = 1;
@@ -281,7 +283,7 @@ Plan name resolution:
 }
 
 async function runTemplates(jsonMode: boolean): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const templates = await loadPlanTemplates(dir);
 	const list = Object.keys(templates).sort();
 	const entries = list.map((name) => ({
@@ -328,7 +330,7 @@ interface PlanRequest {
 }
 
 const INSTRUCTIONS =
-	'Fill every section. Required fields are marked. Use prior_art entries to ground decisions. Reply with JSON shaped { "template": "<name>", "name": "<short label>", "sections": { "<section-name>": <value>, ... } } — drop the plan_request wrapper, and sections in your reply is an object keyed by name (not the array of section metadata above). The top-level `name` field is an optional short human-readable label (e.g. "Schema-driven config editor"); if you omit it, sd plan submit derives one from the parent seed title. Each step is shaped { title?, type?, priority?, blocks?: number[], labels?: string[], plan_template?, existing_seed? }. In each step, `blocks` lists 1-based step indices that this step blocks (step 1 is the first step, step N is the last); e.g. step 1 with `blocks: [2]` means step 1 must finish before step 2 starts. Leave empty if nothing depends on it. Optional `labels` is an array of non-empty strings applied to the spawned (or adopted) child seed; values are normalized (lowercased, trimmed, deduped) and merged additively on adoption — they never clobber existing labels.';
+	'Fill every section. Required fields are marked. Use prior_art entries to ground decisions. Reply with JSON shaped { "template": "<name>", "name": "<short label>", "sections": { "<section-name>": <value>, ... } } — drop the plan_request wrapper, and sections in your reply is an object keyed by name (not the array of section metadata above). The top-level `name` field is an optional short human-readable label (e.g. "Schema-driven config editor"); if you omit it, luuna-missions plan submit derives one from the parent seed title. Each step is shaped { title?, type?, priority?, blocks?: number[], labels?: string[], plan_template?, existing_seed? }. In each step, `blocks` lists 1-based step indices that this step blocks (step 1 is the first step, step N is the last); e.g. step 1 with `blocks: [2]` means step 1 must finish before step 2 starts. Leave empty if nothing depends on it. Optional `labels` is an array of non-empty strings applied to the spawned (or adopted) child seed; values are normalized (lowercased, trimmed, deduped) and merged additively on adoption — they never clobber existing labels.';
 
 function buildPlanRequest(
 	seedId: string,
@@ -369,7 +371,7 @@ async function runPrompt(
 	domainOverride: string | undefined,
 	jsonMode: boolean,
 ): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const issues = await readIssues(dir);
 	const seed = issues.find((i) => i.id === seedId);
 	if (!seed) throw new Error(`Seed not found: ${seedId}`);
@@ -426,7 +428,7 @@ async function runPrompt(
 	}
 	console.log("");
 	console.log(`${muted("Pipe --json into a file the LLM fills, then run:")}`);
-	console.log(`  sd plan submit ${seedId} --plan <file>`);
+	console.log(`  luuna-missions plan submit ${seedId} --plan <file>`);
 }
 
 interface SubmittedStep {
@@ -439,14 +441,14 @@ interface SubmittedStep {
 	blocks?: number[];
 	plan_template?: string;
 	existing_seed?: string;
-	// Optional per-step labels (seeds-7561 / pl-e5a8 step 1). Normalization
+	// Optional per-step labels (missions-7561 / pl-e5a8 step 1). Normalization
 	// (lowercase/trim/dedup) and propagation into spawned/adopted children land
-	// in subsequent plan steps (seeds-745e fresh-spawn, seeds-bac9 adoption).
+	// in subsequent plan steps (missions-745e fresh-spawn, missions-bac9 adoption).
 	labels?: string[];
 }
 
 // Additively merge per-step labels into an adopted seed's existing labels
-// (seeds-bac9 / pl-e5a8 step 3). Normalization mirrors `sd label add`
+// (missions-bac9 / pl-e5a8 step 3). Normalization mirrors `luuna-missions label add`
 // (lowercase, trim, drop empties); the result is deduped via Set. Returns the
 // merged array when it differs from `existing`, or `undefined` when there is
 // nothing to add. Adoption is link-only: we never remove labels the seed
@@ -509,7 +511,7 @@ function validatePlanTemplateRefs(
 		if (!templates[ref]) {
 			const available = Object.keys(templates).join(", ");
 			const label = step.title ?? "untitled";
-			return `step ${i + 1} (${label}): plan_template '${ref}' is not defined. Available: ${available}. Add it under plan_templates: in .seeds/config.yaml.`;
+			return `step ${i + 1} (${label}): plan_template '${ref}' is not defined. Available: ${available}. Add it under plan_templates: in .luuna/missions/config.yaml.`;
 		}
 	}
 	return null;
@@ -550,7 +552,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 		nameOverride,
 		jsonMode,
 	} = opts;
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 
 	const raw = await readPlanInput(planFile);
 	let parsed: unknown;
@@ -593,7 +595,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 	}
 	const config = await readConfig(dir);
 
-	// Name resolution priority (seeds-5640): --name flag > plan JSON `name` >
+	// Name resolution priority (missions-5640): --name flag > plan JSON `name` >
 	// seed.title (fresh submit) or existing plan.name (overwrite). The third
 	// fallback is decided inside the lock so we see the live seed/plan state.
 	const explicitName = normalizePlanName(nameOverride) ?? normalizePlanName(submitted.name);
@@ -605,9 +607,9 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 	let aborted = false;
 	// Captured inside the lock so the post-success outbound mulch write has
 	// access without re-reading issues.jsonl.
-	let seedSnapshot: Issue | null = null;
+	let missionSnapshot: Issue | null = null;
 	// Captured inside the lock so the post-success Next-block can decide
-	// whether to suggest `sd plan review` (only when no reviewer yet and the
+	// whether to suggest `luuna-missions plan review` (only when no reviewer yet and the
 	// plan is in a reviewable state).
 	let planStatus: PlanStatus = "approved";
 	let planReviewedBy: string | undefined;
@@ -623,7 +625,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 			const seedIdx = allIssues.findIndex((i) => i.id === seedId);
 			const seed = allIssues[seedIdx];
 			if (!seed) throw new Error(`Seed not found: ${seedId}`);
-			seedSnapshot = seed;
+			missionSnapshot = seed;
 
 			const existingPlan = allPlans.find((p) => p.seed === seedId && p.status !== "draft");
 			if (existingPlan && !overwrite) {
@@ -669,7 +671,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 			// Fresh-submit path (no existing non-draft plan).
 			//
 			// Steps may carry `existing_seed: "<id>"` to adopt an already-open
-			// seed instead of spawning a fresh child (seeds-3c89 / pl-43ff).
+			// seed instead of spawning a fresh child (missions-3c89 / pl-43ff).
 			// Adoption is link-only: status/title/type/priority/assignee/labels
 			// stay with the seed; we only set plan_id, plan_step_index, prepend
 			// the backref block, and wire blocks/blockedBy edges.
@@ -690,7 +692,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 				finalChildIds.push(id);
 			}
 
-			// Build fresh issues; mutate adopted seeds in place. Edge wiring
+			// Build fresh issues; mutate adopted missions in place. Edge wiring
 			// runs in a unified pass below so adopted + fresh edges go through
 			// the same pipeline.
 			const newIssues: Issue[] = [];
@@ -703,7 +705,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 				if (adoption) {
 					const matched = allIssues[adoption.seedAllIdx];
 					if (!matched) continue;
-					// seeds-bac9 — additively merge step.labels into the adopted
+					// missions-bac9 — additively merge step.labels into the adopted
 					// seed's existing labels (link-only path; user-added labels
 					// survive).
 					const mergedLabels = mergeAdoptedLabels(matched.labels, step.labels);
@@ -747,8 +749,8 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 					createdAt: now,
 					updatedAt: now,
 				};
-				// seeds-745e / pl-e5a8 step 2 — apply per-step labels to the
-				// freshly spawned child. Normalization mirrors `sd label add`
+				// missions-745e / pl-e5a8 step 2 — apply per-step labels to the
+				// freshly spawned child. Normalization mirrors `luuna-missions label add`
 				// (lowercase, trim, dedup); empty arrays after normalization
 				// are omitted so the on-disk Issue stays minimal.
 				if (step.labels && step.labels.length > 0) {
@@ -794,7 +796,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 			};
 
 			// PLAN_SPEC.md:248-257 — forward semantics: step i with blocks=[j]
-			// means "this step blocks step j". 1-based (seeds-185f).
+			// means "this step blocks step j". 1-based (missions-185f).
 			for (let i = 0; i < steps.length; i++) {
 				const step = steps[i];
 				if (!step) continue;
@@ -840,8 +842,8 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 				updatedAt: now,
 			};
 			if (resolvedName) plan.name = resolvedName;
-			// Track submit-time existing_seed adoptions so `sd plan show` can tag
-			// them (seeds-a3ab). Only persist when non-empty so plans that don't
+			// Track submit-time existing_seed adoptions so `luuna-missions plan show` can tag
+			// them (missions-a3ab). Only persist when non-empty so plans that don't
 			// use adoption stay byte-identical to pre-feature output.
 			const submitAdopted = [...adoptions.values()].map((a) => a.seedId);
 			if (submitAdopted.length > 0) plan.adoptedChildren = submitAdopted;
@@ -864,12 +866,12 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 	if (aborted) return;
 
 	let recordedMulchId: string | null = null;
-	if (shouldRecordDecision && seedSnapshot) {
+	if (shouldRecordDecision && missionSnapshot) {
 		// PLAN_SPEC.md:354-356 — best-effort outbound write. Submit has already
 		// succeeded by this point; any failure here warns on stderr and leaves
 		// the plan + children intact.
 		recordedMulchId = await runOutboundDecision({
-			seed: seedSnapshot,
+			seed: missionSnapshot,
 			planId: createdPlanId,
 			approach: submitted.sections.approach,
 			domainOverride,
@@ -882,7 +884,7 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 		// stderr; never auto-close.
 		for (const o of obsoleteChildren) {
 			process.stderr.write(
-				`sd close ${o.id} --reason "obsoleted by plan ${createdPlanId} revision ${revision}"\n`,
+				`luuna-missions close ${o.id} --reason "obsoleted by plan ${createdPlanId} revision ${revision}"\n`,
 			);
 		}
 	}
@@ -933,16 +935,18 @@ async function runSubmit(seedId: string, planFile: string, opts: SubmitOptions):
 // Next-block hints follow the convention used by the obsolete-children
 // suggestions: stderr only, so JSON consumers (stdout) stay clean. The review
 // hint is conditional — once a reviewer is on the plan, suggesting
-// `sd plan review` again is just noise.
+// `luuna-missions plan review` again is just noise.
 function writeNextHints(opts: { planId: string; reviewable: boolean }): void {
 	const lines: string[] = [
 		"",
 		"Next:",
-		`  sd plan show ${opts.planId}          # review the plan as a unit`,
-		"  sd ready                      # pick up the first child step",
+		`  luuna-missions plan show ${opts.planId}          # review the plan as a unit`,
+		"  luuna-missions ready                      # pick up the first child step",
 	];
 	if (opts.reviewable) {
-		lines.push(`  sd plan review ${opts.planId} --by <name>   # record approval (optional)`);
+		lines.push(
+			`  luuna-missions plan review ${opts.planId} --by <name>   # record approval (optional)`,
+		);
 	}
 	process.stderr.write(`${lines.join("\n")}\n`);
 }
@@ -956,7 +960,7 @@ interface AdoptionValidationArgs {
 	steps: SubmittedStep[];
 	seedId: string;
 	allIssues: Issue[];
-	// When set, seeds with plan_id === allowedCurrentPlanId pass the
+	// When set, missions with plan_id === allowedCurrentPlanId pass the
 	// already-attached check. The overwrite path passes the live plan id so a
 	// step can reference a current plan-child by id (rename + reorder) without
 	// being mistaken for cross-plan poaching.
@@ -974,7 +978,7 @@ function validateAdoptions(args: AdoptionValidationArgs): Map<number, AdoptionEn
 		const step = steps[i];
 		if (!step?.existing_seed) continue;
 		const adoptId = step.existing_seed;
-		// Step titles are optional on adoption-only steps (seeds-5583), so the
+		// Step titles are optional on adoption-only steps (missions-5583), so the
 		// error label falls back to the adopted seed id when title is absent.
 		const label = step.title ? `step ${i + 1} (${step.title})` : `step ${i + 1} (adopt ${adoptId})`;
 		if (step.plan_template) {
@@ -997,7 +1001,7 @@ function validateAdoptions(args: AdoptionValidationArgs): Map<number, AdoptionEn
 		}
 		if (seed.status === "closed") {
 			throw new Error(
-				`${label}: existing_seed ${adoptId} is closed; only open or in-progress seeds can be adopted.`,
+				`${label}: existing_seed ${adoptId} is closed; only open or in-progress missions can be adopted.`,
 			);
 		}
 		if (seed.plan_id && seed.plan_id !== allowedCurrentPlanId) {
@@ -1064,10 +1068,10 @@ function applyOverwrite(args: OverwriteArgs): OverwriteResult {
 		now,
 	} = args;
 
-	// Validate any existing_seed adoptions before mutating state. Seeds
+	// Validate any existing_seed adoptions before mutating state. Missions
 	// already attached to *this* plan are allowed; that's how the overwrite
 	// path lets a step pin to a current plan-child by id (rename, reorder)
-	// instead of relying on title matching alone. (seeds-99ae / pl-43ff step 3)
+	// instead of relying on title matching alone. (missions-99ae / pl-43ff step 3)
 	const adoptions = validateAdoptions({
 		steps,
 		seedId: seed.id,
@@ -1120,7 +1124,7 @@ function applyOverwrite(args: OverwriteArgs): OverwriteResult {
 	// Build issues for newly spawned children. Existing matched children keep
 	// their fields (assignee, labels, status, etc.) but their backref block is
 	// refreshed in place so the snippet stays in sync with the live plan
-	// (seeds-76af). External adoptions get linked into the plan (plan_id,
+	// (missions-76af). External adoptions get linked into the plan (plan_id,
 	// plan_step_index, backref) without touching other fields; the parent-
 	// blocks edge is added in the unified wiring pass below.
 	const approach = (newSections as { approach?: unknown }).approach;
@@ -1134,7 +1138,7 @@ function applyOverwrite(args: OverwriteArgs): OverwriteResult {
 			const matchedIdx = allIssues.findIndex((iss) => iss.id === childId);
 			const matched = allIssues[matchedIdx];
 			if (matched) {
-				// seeds-bac9 — overwrite/revision path: additively merge
+				// missions-bac9 — overwrite/revision path: additively merge
 				// step.labels into the matched child's labels. Never strips
 				// labels — manual edits and previously merged labels survive.
 				const mergedLabels = mergeAdoptedLabels(matched.labels, step.labels);
@@ -1158,7 +1162,7 @@ function applyOverwrite(args: OverwriteArgs): OverwriteResult {
 			const matchedIdx = allIssues.findIndex((iss) => iss.id === childId);
 			const matched = allIssues[matchedIdx];
 			if (matched) {
-				// seeds-bac9 — overwrite path external adoption: merge
+				// missions-bac9 — overwrite path external adoption: merge
 				// step.labels into the newly linked seed's existing labels.
 				const mergedLabels = mergeAdoptedLabels(matched.labels, step.labels);
 				allIssues[matchedIdx] = {
@@ -1205,7 +1209,7 @@ function applyOverwrite(args: OverwriteArgs): OverwriteResult {
 		} else {
 			issue.plan_id = existingPlan.id;
 		}
-		// seeds-745e / pl-e5a8 step 2 — apply per-step labels to the freshly
+		// missions-745e / pl-e5a8 step 2 — apply per-step labels to the freshly
 		// spawned child on the overwrite/revision path. Same normalization as
 		// the initial-submit branch above.
 		if (step.labels && step.labels.length > 0) {
@@ -1253,7 +1257,7 @@ function applyOverwrite(args: OverwriteArgs): OverwriteResult {
 		if (!step) continue;
 		const sourceId = finalChildIds[i];
 		if (!sourceId) continue;
-		// step.blocks is 1-based (seeds-185f); translate to 0-based.
+		// step.blocks is 1-based (missions-185f); translate to 0-based.
 		for (const j of step.blocks ?? []) {
 			const targetId = finalChildIds[j - 1];
 			if (!targetId) continue;
@@ -1305,7 +1309,7 @@ function applyOverwrite(args: OverwriteArgs): OverwriteResult {
 	// Update the plan row in place — single mutation per overwrite.
 	const planIdx = allPlans.findIndex((p) => p.id === existingPlan.id);
 	// Preserve prior adoptions for children that survive the overwrite, then
-	// add the freshly-adopted external seeds from this rewrite. seeds-a3ab.
+	// add the freshly-adopted external missions from this rewrite. missions-a3ab.
 	const finalChildIdSet = new Set(finalChildIds);
 	const survivingAdopted = (existingPlan.adoptedChildren ?? []).filter((id) =>
 		finalChildIdSet.has(id),
@@ -1351,7 +1355,7 @@ interface ListFilters {
 const VALID_PLAN_STATUSES = new Set(["draft", "approved", "active", "done"]);
 const VALID_PLAN_OUTCOMES = new Set(["success", "partial", "failure"]);
 
-// Shared by `sd plan list` and `sd plan ready` (seeds-03f2 / pl-611d step 1).
+// Shared by `luuna-missions plan list` and `luuna-missions plan ready` (missions-03f2 / pl-611d step 1).
 // Validates the --status/--outcome enum flags so both commands reject the same
 // bad input with identical messages.
 function validateListFilters(filters: ListFilters): void {
@@ -1368,7 +1372,7 @@ function validateListFilters(filters: ListFilters): void {
 }
 
 // Apply the positive passthrough filters (--seed/--status/--outcome/--template)
-// and sort newest-first. Callers may pre-narrow `plans` first (e.g. `sd plan
+// and sort newest-first. Callers may pre-narrow `plans` first (e.g. `luuna-missions plan
 // ready` drops status==="done") so this stays a pure positive/exact filter.
 function applyListFilters(plans: Plan[], filters: ListFilters): Plan[] {
 	return plans
@@ -1381,7 +1385,7 @@ function applyListFilters(plans: Plan[], filters: ListFilters): Plan[] {
 
 // Render an already-filtered plan list. `command` is the value emitted in the
 // JSON `command` field so `plan list` and `plan ready` keep distinct contracts
-// while sharing byte-identical human + JSON formatting (seeds-03f2).
+// while sharing byte-identical human + JSON formatting (missions-03f2).
 async function renderPlanList(filtered: Plan[], command: string, jsonMode: boolean): Promise<void> {
 	if (jsonMode) {
 		await outputJson({
@@ -1411,7 +1415,7 @@ async function renderPlanList(filtered: Plan[], command: string, jsonMode: boole
 
 async function runList(filters: ListFilters, jsonMode: boolean): Promise<void> {
 	validateListFilters(filters);
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const plans = await readPlans(dir);
 	const filtered = applyListFilters(plans, filters);
 	await renderPlanList(filtered, "plan list", jsonMode);
@@ -1433,7 +1437,7 @@ async function runOutcome(
 	if (!VALID_OUTCOMES.has(result)) {
 		throw new Error(`Invalid --result value: ${result}. Valid: ${[...VALID_OUTCOMES].join("|")}`);
 	}
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(idArg, dir);
 	let updatedPlan: Plan | null = null;
 	let openChildren = 0;
@@ -1443,7 +1447,9 @@ async function runOutcome(
 			const idx = plans.findIndex((p) => p.id === planId);
 			const plan = plans[idx];
 			if (!plan) {
-				throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+				throw new Error(
+					`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+				);
 			}
 			const issues = await readIssues(dir);
 			openChildren = plan.children.filter((cid) => {
@@ -1493,16 +1499,16 @@ interface CreateOptions {
 	jsonMode: boolean;
 }
 
-// sd plan create <seed-id> (seeds-3dd1). First-class adopt-only plan: writes a
+// luuna-missions plan create <seed-id> (missions-3dd1). First-class adopt-only plan: writes a
 // plan row with zero spawned children and an empty steps blueprint, intended to
-// be populated via `sd plan adopt`. This removes the placeholder-step dance
+// be populated via `luuna-missions plan adopt`. This removes the placeholder-step dance
 // (submit 2 throwaway steps → release → close) the release-train use case
 // previously required. Link contract mirrors submit's fresh path: the parent
-// seed's plan_id is set so `sd plan show <seed>`/adopt resolve seed → plan.
-// No children means no blockedBy edges yet — those land as seeds are adopted.
+// seed's plan_id is set so `luuna-missions plan show <seed>`/adopt resolve seed → plan.
+// No children means no blockedBy edges yet — those land as missions are adopted.
 // Lock order matches submit/adopt: outer plans, inner issues (mx-f29e43).
 async function runCreate(seedId: string, opts: CreateOptions): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const templates = await loadPlanTemplates(dir);
 	const explicitName = normalizePlanName(opts.name);
 
@@ -1528,7 +1534,7 @@ async function runCreate(seedId: string, opts: CreateOptions): Promise<void> {
 			const existingPlan = allPlans.find((p) => p.seed === seedId && p.status !== "draft");
 			if (existingPlan) {
 				process.stderr.write(
-					`✗ plan ${existingPlan.id} already exists for ${seedId} (status: ${existingPlan.status}, revision: ${existingPlan.revision})\n  Adopt seeds into it with 'sd plan adopt ${existingPlan.id} <seed-ids...>'.\n`,
+					`✗ plan ${existingPlan.id} already exists for ${seedId} (status: ${existingPlan.status}, revision: ${existingPlan.revision})\n  Adopt missions into it with 'luuna-missions plan adopt ${existingPlan.id} <seed-ids...>'.\n`,
 				);
 				process.exitCode = 1;
 				aborted = true;
@@ -1583,7 +1589,7 @@ async function runCreate(seedId: string, opts: CreateOptions): Promise<void> {
 	}
 	printSuccess(`plan ${accent(createdPlanId)} created (status: approved, adopt-only)`);
 	process.stderr.write(
-		`\nNext:\n  sd plan adopt ${createdPlanId} <seed-ids...>   # populate children in order\n  sd plan reorder ${createdPlanId} <seed-ids...> # set the exact children order\n`,
+		`\nNext:\n  luuna-missions plan adopt ${createdPlanId} <seed-ids...>   # populate children in order\n  luuna-missions plan reorder ${createdPlanId} <seed-ids...> # set the exact children order\n`,
 	);
 }
 
@@ -1595,7 +1601,7 @@ interface AdoptOptions {
 	jsonMode: boolean;
 }
 
-// Positioning for `sd plan adopt`: at most one of --at/--before/--after may be
+// Positioning for `luuna-missions plan adopt`: at most one of --at/--before/--after may be
 // given. --at is a 1-based slot in the resulting children array; --before /
 // --after anchor on an existing child id. Returns a discriminated spec the
 // in-lock resolver translates into a 0-based insertion index once the live
@@ -1666,17 +1672,17 @@ function resolveInsertIndex(position: AdoptPosition, children: string[], planId:
 	}
 }
 
-// sd plan adopt <plan-id> <seed-ids...> [--step <i>] (seeds-2b93 / pl-43ff step 4).
-// Post-submit adoption: link existing open seeds into an active plan without
+// luuna-missions plan adopt <plan-id> <seed-ids...> [--step <i>] (missions-2b93 / pl-43ff step 4).
+// Post-submit adoption: link existing open missions into an active plan without
 // spawning fresh children. Adoption is link-only — status, type, priority,
 // assignee, labels stay with the seed; we only set plan_id (+ optionally
-// plan_step_index when --step is given), prepend the seeds:plan-backref block,
+// plan_step_index when --step is given), prepend the missions:plan-backref block,
 // wire the seed.blocks/parent.blockedBy edges, append to plan.children, and
 // bump plan.revision. Validation runs in a single pre-write pass so an invalid
 // candidate leaves issues + plans untouched. Lock order matches submit:
 // outer plans, inner issues (mx-f29e43).
 async function runAdopt(planIdArg: string, seedIds: string[], opts: AdoptOptions): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(planIdArg, dir);
 
 	if (seedIds.length === 0) {
@@ -1703,7 +1709,9 @@ async function runAdopt(planIdArg: string, seedIds: string[], opts: AdoptOptions
 			const planIdx = allPlans.findIndex((p) => p.id === planId);
 			const plan = allPlans[planIdx];
 			if (!plan) {
-				throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+				throw new Error(
+					`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+				);
 			}
 
 			// --step (when given) must be in-range against the blueprint, so a
@@ -1743,7 +1751,7 @@ async function runAdopt(planIdArg: string, seedIds: string[], opts: AdoptOptions
 				}
 				if (seed.status === "closed") {
 					throw new Error(
-						`seed ${seedId} is closed; only open or in-progress seeds can be adopted.`,
+						`seed ${seedId} is closed; only open or in-progress missions can be adopted.`,
 					);
 				}
 				if (seed.plan_id) {
@@ -1761,7 +1769,7 @@ async function runAdopt(planIdArg: string, seedIds: string[], opts: AdoptOptions
 			// When the operator pins these adoptions to a specific blueprint
 			// step (--step <i>), pick up any labels declared on that step so
 			// post-submit adoption ends up label-equivalent to submit-time
-			// adoption (seeds-bac9 / pl-e5a8 step 3). No --step ⇒ no step ⇒
+			// adoption (missions-bac9 / pl-e5a8 step 3). No --step ⇒ no step ⇒
 			// no labels to merge.
 			let stepLabels: string[] | undefined;
 			if (stepIndex !== undefined) {
@@ -1819,7 +1827,7 @@ async function runAdopt(planIdArg: string, seedIds: string[], opts: AdoptOptions
 				...insertedIds,
 				...plan.children.slice(insertAt),
 			];
-			// seeds-a3ab: tag these ids on the plan so `sd plan show` renders
+			// missions-a3ab: tag these ids on the plan so `luuna-missions plan show` renders
 			// them with "(adopted)". Always non-empty here because runAdopt
 			// requires at least one seed id.
 			const nextAdopted = [...(plan.adoptedChildren ?? [])];
@@ -1866,10 +1874,10 @@ interface ReleaseOptions {
 	jsonMode: boolean;
 }
 
-// sd plan release <plan-id> <seed-ids...> (seeds-2b8a / pl-43ff step 5).
-// Inverse of runAdopt: detach seeds from a plan without closing them. Each
+// luuna-missions plan release <plan-id> <seed-ids...> (missions-2b8a / pl-43ff step 5).
+// Inverse of runAdopt: detach missions from a plan without closing them. Each
 // candidate must currently be attached to the named plan (seed.plan_id ===
-// planId). Mutation per seed: strip the seeds:plan-backref block, clear
+// planId). Mutation per seed: strip the missions:plan-backref block, clear
 // plan_id + plan_step_index, drop parent.id from seed.blocks; on the parent,
 // drop seed.id from blockedBy. The plan row drops seed.id from children and
 // bumps revision once per command call. Validation runs in a single pre-write
@@ -1880,7 +1888,7 @@ async function runRelease(
 	seedIds: string[],
 	opts: ReleaseOptions,
 ): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(planIdArg, dir);
 
 	if (seedIds.length === 0) {
@@ -1904,7 +1912,9 @@ async function runRelease(
 			const planIdx = allPlans.findIndex((p) => p.id === planId);
 			const plan = allPlans[planIdx];
 			if (!plan) {
-				throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+				throw new Error(
+					`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+				);
 			}
 
 			const parentIdx = allIssues.findIndex((i) => i.id === plan.seed);
@@ -1970,7 +1980,7 @@ async function runRelease(
 			// Plan row: drop released ids from children, bump revision once per
 			// command call.
 			const nextChildren = plan.children.filter((id) => !releasedSet.has(id));
-			// seeds-a3ab: mirror children — released ids leave adoptedChildren
+			// missions-a3ab: mirror children — released ids leave adoptedChildren
 			// too. Drop the field when it becomes empty so JSONL diffs stay
 			// minimal for plans that never used adoption.
 			const nextAdopted = (plan.adoptedChildren ?? []).filter((id) => !releasedSet.has(id));
@@ -2018,12 +2028,12 @@ interface ReorderOptions {
 	jsonMode: boolean;
 }
 
-// sd plan reorder <plan-id> <seed-ids...> (seeds-3dd1). Set the exact order of
+// luuna-missions plan reorder <plan-id> <seed-ids...> (missions-3dd1). Set the exact order of
 // plan.children in one call. The provided ids must be a permutation of the
 // current children (same set, no missing, no extra, no dupes) — reorder is a
 // pure ordering operation, never an add/remove (use adopt/release for that).
 // warren's plan-run consumes plan.children order verbatim (seq = index + 1), so
-// this is the surface for pinning a release seed last. Link state on the seeds
+// this is the surface for pinning a release seed last. Link state on the missions
 // (plan_id, plan_step_index, blockedBy edges) is untouched; only the plan row's
 // children array order changes. Bumps revision once per call. Lock: plans only
 // — no issue mutation.
@@ -2032,7 +2042,7 @@ async function runReorder(
 	seedIds: string[],
 	opts: ReorderOptions,
 ): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(planIdArg, dir);
 
 	if (seedIds.length === 0) {
@@ -2052,7 +2062,9 @@ async function runReorder(
 		const planIdx = allPlans.findIndex((p) => p.id === planId);
 		const plan = allPlans[planIdx];
 		if (!plan) {
-			throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+			throw new Error(
+				`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+			);
 		}
 
 		const current = new Set(plan.children);
@@ -2061,12 +2073,12 @@ async function runReorder(
 		const extra = seedIds.filter((id) => !current.has(id));
 		if (extra.length > 0) {
 			throw new Error(
-				`${extra.join(", ")} ${extra.length === 1 ? "is" : "are"} not ${extra.length === 1 ? "a child" : "children"} of plan ${planId}. Adopt first with 'sd plan adopt'.`,
+				`${extra.join(", ")} ${extra.length === 1 ? "is" : "are"} not ${extra.length === 1 ? "a child" : "children"} of plan ${planId}. Adopt first with 'luuna-missions plan adopt'.`,
 			);
 		}
 		if (missing.length > 0) {
 			throw new Error(
-				`reorder must list every child exactly once; missing: ${missing.join(", ")}. Use 'sd plan release' to drop a child.`,
+				`reorder must list every child exactly once; missing: ${missing.join(", ")}. Use 'luuna-missions plan release' to drop a child.`,
 			);
 		}
 
@@ -2206,7 +2218,7 @@ function parseStepPatch(opts: EditOptions): StepPatch | undefined {
 // Parse `--section <name> <text>` variadic capture into (name, text). The
 // commander option type is `<name-and-text...>` so users MUST shell-quote the
 // text (otherwise additional words spill into the array and we error rather
-// than silently joining — agents wrapping seeds rely on explicit failure).
+// than silently joining — agents wrapping missions rely on explicit failure).
 function parseSectionFlag(raw: string[] | undefined): { name: string; text: string } | undefined {
 	if (raw === undefined) return undefined;
 	if (raw.length < 2) {
@@ -2225,7 +2237,7 @@ function parseSectionFlag(raw: string[] | undefined): { name: string; text: stri
 	return { name, text: text ?? "" };
 }
 
-// sd plan edit <id> (pl-dee8). In-place plan field editing. V1 supports --name,
+// luuna-missions plan edit <id> (pl-dee8). In-place plan field editing. V1 supports --name,
 // --section (text sections only), and --step <i> --title/--priority/--type
 // (step metadata; propagates to the child seed at plan_step_index=i-1).
 // Mutation always bumps revision + updatedAt, even when no fields actually
@@ -2236,7 +2248,7 @@ function parseSectionFlag(raw: string[] | undefined): { name: string; text: stri
 // acquired when --section approach changes (children backref refresh) or when
 // --step propagates title/priority/type to a child seed.
 async function runEdit(idArg: string, opts: EditOptions): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(idArg, dir);
 
 	const section = parseSectionFlag(opts.section);
@@ -2273,7 +2285,9 @@ async function runEdit(idArg: string, opts: EditOptions): Promise<void> {
 		const idx = plans.findIndex((p) => p.id === planId);
 		const plan = plans[idx];
 		if (!plan) {
-			throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+			throw new Error(
+				`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+			);
 		}
 
 		let nextSections = plan.sections;
@@ -2295,7 +2309,7 @@ async function runEdit(idArg: string, opts: EditOptions): Promise<void> {
 			}
 			if (spec.kind !== "text") {
 				throw new Error(
-					`--section editing supports kind=text only (V1). Section '${section.name}' is kind=${typeof spec.kind === "string" ? spec.kind : "object"}. Use 'sd plan submit --overwrite' for structural edits.`,
+					`--section editing supports kind=text only (V1). Section '${section.name}' is kind=${typeof spec.kind === "string" ? spec.kind : "object"}. Use 'luuna-missions plan submit --overwrite' for structural edits.`,
 				);
 			}
 			const minLength = spec.min_length ?? 0;
@@ -2318,7 +2332,7 @@ async function runEdit(idArg: string, opts: EditOptions): Promise<void> {
 			const rawSteps = (nextSections as { steps?: unknown }).steps;
 			if (!Array.isArray(rawSteps)) {
 				throw new Error(
-					`Plan ${planId} has no steps section to edit. Use 'sd plan submit --overwrite' to add steps.`,
+					`Plan ${planId} has no steps section to edit. Use 'luuna-missions plan submit --overwrite' to add steps.`,
 				);
 			}
 			const total = rawSteps.length;
@@ -2389,8 +2403,8 @@ async function runEdit(idArg: string, opts: EditOptions): Promise<void> {
 				}
 				if (stepPatch !== undefined) {
 					// Match every child that carries plan_step_index === stepPatch.index.
-					// Multiple matches are legal (adoption via `sd plan adopt --step`
-					// stamps the same index on extra seeds); propagate to all of them.
+					// Multiple matches are legal (adoption via `luuna-missions plan adopt --step`
+					// stamps the same index on extra missions); propagate to all of them.
 					for (let i = 0; i < allIssues.length; i++) {
 						const child = allIssues[i];
 						if (!child) continue;
@@ -2440,7 +2454,7 @@ async function runEdit(idArg: string, opts: EditOptions): Promise<void> {
 }
 
 async function runReview(idArg: string, by: string, jsonMode: boolean): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(idArg, dir);
 	let updatedPlan: Plan | null = null;
 	await withLock(plansPath(dir), async () => {
@@ -2448,7 +2462,9 @@ async function runReview(idArg: string, by: string, jsonMode: boolean): Promise<
 		const idx = plans.findIndex((p) => p.id === planId);
 		const plan = plans[idx];
 		if (!plan) {
-			throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+			throw new Error(
+				`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+			);
 		}
 		const next: Plan = { ...plan, reviewedBy: by, updatedAt: new Date().toISOString() };
 		plans[idx] = next;
@@ -2472,12 +2488,14 @@ async function runReview(idArg: string, by: string, jsonMode: boolean): Promise<
 }
 
 async function runValidate(idArg: string, jsonMode: boolean): Promise<void> {
-	const dir = await findSeedsDir();
+	const dir = await findMissionsDir();
 	const planId = await resolvePlanIdArg(idArg, dir);
 	const plans = await readPlans(dir);
 	const plan = plans.find((p) => p.id === planId);
 	if (!plan) {
-		throw new Error(`Plan not found: ${planId}. Run 'sd plan list' to see available plans.`);
+		throw new Error(
+			`Plan not found: ${planId}. Run 'luuna-missions plan list' to see available plans.`,
+		);
 	}
 	const templates = await loadPlanTemplates(dir);
 	const template = templates[plan.template];
@@ -2516,7 +2534,7 @@ interface OutboundDecisionArgs {
 }
 
 async function runOutboundDecision(args: OutboundDecisionArgs): Promise<string | null> {
-	const projectRoot = dirname(args.cwd);
+	const projectRoot = dirname(dirname(args.cwd));
 	// Check ml availability first so the stderr warning distinguishes
 	// "ml not installed" from "no domain matched" — the spec mandates the
 	// former phrasing for the absent-ml branch (PLAN_SPEC.md:354-356).

@@ -11,12 +11,12 @@ import {
 } from "./config.ts";
 
 let dir: string;
-let seedsDir: string;
+let missionsDir: string;
 
 beforeEach(async () => {
-	dir = await mkdtemp(join(tmpdir(), "seeds-tpl-"));
-	seedsDir = join(dir, ".seeds");
-	mkdirSync(seedsDir, { recursive: true });
+	dir = await mkdtemp(join(tmpdir(), "missions-tpl-"));
+	missionsDir = join(dir, ".luuna/missions");
+	mkdirSync(missionsDir, { recursive: true });
 });
 
 afterEach(async () => {
@@ -24,13 +24,13 @@ afterEach(async () => {
 });
 
 function writeConfig(yaml: string): void {
-	writeFileSync(join(seedsDir, "config.yaml"), yaml);
+	writeFileSync(join(missionsDir, "config.yaml"), yaml);
 }
 
 describe("loadPlanTemplates — built-in fallback", () => {
 	test("returns all built-ins when no plan_templates block exists", async () => {
 		writeConfig('project: test\nversion: "1"\n');
-		const templates = await loadPlanTemplates(seedsDir);
+		const templates = await loadPlanTemplates(missionsDir);
 		expect(Object.keys(templates).sort()).toEqual(["bug", "feature", "refactor"]);
 		expect(templates.feature).toEqual(BUILTIN_FEATURE_TEMPLATE);
 		expect(templates.bug).toEqual(BUILTIN_BUG_TEMPLATE);
@@ -38,7 +38,7 @@ describe("loadPlanTemplates — built-in fallback", () => {
 	});
 
 	test("returns built-ins when config.yaml is missing", async () => {
-		const templates = await loadPlanTemplates(seedsDir);
+		const templates = await loadPlanTemplates(missionsDir);
 		expect(templates.feature).toEqual(BUILTIN_FEATURE_TEMPLATE);
 		expect(templates.bug).toEqual(BUILTIN_BUG_TEMPLATE);
 		expect(templates.refactor).toEqual(BUILTIN_REFACTOR_TEMPLATE);
@@ -63,7 +63,7 @@ describe("loadPlanTemplates — user templates", () => {
 				'        prompt: "Steps."',
 			].join("\n"),
 		);
-		const templates = await loadPlanTemplates(seedsDir);
+		const templates = await loadPlanTemplates(missionsDir);
 		const bug = templates.bug;
 		expect(bug?.sections.title).toBeDefined();
 		// Built-in bug-specific sections are gone — full override semantics.
@@ -88,7 +88,7 @@ describe("loadPlanTemplates — user templates", () => {
 				'        prompt: "Steps."',
 			].join("\n"),
 		);
-		const templates = await loadPlanTemplates(seedsDir);
+		const templates = await loadPlanTemplates(missionsDir);
 		expect(templates.refactor?.sections.goal).toBeDefined();
 		expect(templates.refactor?.sections.behavior_invariant).toBeUndefined();
 	});
@@ -126,7 +126,7 @@ describe("loadPlanTemplates — user templates", () => {
 				'        prompt: "Optional follow-up tasks."',
 			].join("\n"),
 		);
-		const templates = await loadPlanTemplates(seedsDir);
+		const templates = await loadPlanTemplates(missionsDir);
 		expect(Object.keys(templates).sort()).toEqual(["bug", "feature", "refactor", "spike"]);
 		const spike = templates.spike;
 		expect(spike?.name).toBe("spike");
@@ -166,7 +166,7 @@ describe("loadPlanTemplates — user templates", () => {
 				'        prompt: "Steps."',
 			].join("\n"),
 		);
-		const templates = await loadPlanTemplates(seedsDir);
+		const templates = await loadPlanTemplates(missionsDir);
 		const feature = templates.feature;
 		expect(feature?.sections.tldr).toEqual({
 			required: true,
@@ -200,7 +200,7 @@ describe("loadPlanTemplates — user templates", () => {
 				'        prompt: "Alternatives considered."',
 			].join("\n"),
 		);
-		const templates = await loadPlanTemplates(seedsDir);
+		const templates = await loadPlanTemplates(missionsDir);
 		const item = templates.feature?.sections.alternatives?.item;
 		expect(item).toEqual({
 			name: { required: true, kind: "text", prompt: "" },
@@ -222,7 +222,7 @@ describe("loadPlanTemplates — validation errors", () => {
 				'        prompt: "x"',
 			].join("\n"),
 		);
-		await expect(loadPlanTemplates(seedsDir)).rejects.toThrow(
+		await expect(loadPlanTemplates(missionsDir)).rejects.toThrow(
 			/plan_templates\.bad\.sections\.something\.kind: unknown kind 'paragraph'/,
 		);
 	});
@@ -238,7 +238,7 @@ describe("loadPlanTemplates — validation errors", () => {
 				'        prompt: "x"',
 			].join("\n"),
 		);
-		await expect(loadPlanTemplates(seedsDir)).rejects.toThrow(/required: must be a boolean/);
+		await expect(loadPlanTemplates(missionsDir)).rejects.toThrow(/required: must be a boolean/);
 	});
 
 	test("rejects missing prompt", async () => {
@@ -252,7 +252,7 @@ describe("loadPlanTemplates — validation errors", () => {
 				"        kind: text",
 			].join("\n"),
 		);
-		await expect(loadPlanTemplates(seedsDir)).rejects.toThrow(/prompt: must be a string/);
+		await expect(loadPlanTemplates(missionsDir)).rejects.toThrow(/prompt: must be a string/);
 	});
 
 	test("rejects malformed item", async () => {
@@ -268,6 +268,8 @@ describe("loadPlanTemplates — validation errors", () => {
 				'        prompt: "x"',
 			].join("\n"),
 		);
-		await expect(loadPlanTemplates(seedsDir)).rejects.toThrow(/must be 'text' or an object spec/);
+		await expect(loadPlanTemplates(missionsDir)).rejects.toThrow(
+			/must be 'text' or an object spec/,
+		);
 	});
 });

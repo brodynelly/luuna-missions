@@ -19,7 +19,7 @@ async function runJson<T = unknown>(args: string[], cwd: string): Promise<T> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-tpl-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-tpl-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -27,7 +27,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd tpl create", () => {
+describe("luuna-missions tpl create", () => {
 	test("creates a template with --name", async () => {
 		const result = await runJson<{ success: boolean; id: string }>(
 			["tpl", "create", "--name", "scout-build-review"],
@@ -43,7 +43,7 @@ describe("sd tpl create", () => {
 	});
 });
 
-describe("sd tpl step add", () => {
+describe("luuna-missions tpl step add", () => {
 	test("adds a step to a template", async () => {
 		const create = await runJson<{ success: boolean; id: string }>(
 			["tpl", "create", "--name", "my-template"],
@@ -154,7 +154,7 @@ describe("sd tpl step add", () => {
 	});
 });
 
-describe("sd tpl list", () => {
+describe("luuna-missions tpl list", () => {
 	test("lists all templates", async () => {
 		await run(["tpl", "create", "--name", "template-1"], tmpDir);
 		await run(["tpl", "create", "--name", "template-2"], tmpDir);
@@ -178,7 +178,7 @@ describe("sd tpl list", () => {
 	});
 });
 
-describe("sd tpl show", () => {
+describe("luuna-missions tpl show", () => {
 	test("shows template with its steps", async () => {
 		const create = await runJson<{ success: boolean; id: string }>(
 			["tpl", "create", "--name", "show-test"],
@@ -207,7 +207,7 @@ describe("sd tpl show", () => {
 	});
 });
 
-describe("sd tpl pour", () => {
+describe("luuna-missions tpl pour", () => {
 	test("pours template into issues", async () => {
 		const create = await runJson<{ success: boolean; id: string }>(
 			["tpl", "create", "--name", "scout-build"],
@@ -306,7 +306,7 @@ describe("sd tpl pour", () => {
 	});
 });
 
-describe("sd tpl status", () => {
+describe("luuna-missions tpl status", () => {
 	test("returns convoy completion status", async () => {
 		const create = await runJson<{ success: boolean; id: string }>(
 			["tpl", "create", "--name", "status-test"],

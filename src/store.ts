@@ -136,15 +136,15 @@ function deduplicateById<T extends { id: string }>(items: T[]): T[] {
 	return Array.from(map.values());
 }
 
-export async function readIssues(seedsDir: string): Promise<Issue[]> {
-	const file = Bun.file(join(seedsDir, ISSUES_FILE));
+export async function readIssues(missionsDir: string): Promise<Issue[]> {
+	const file = Bun.file(join(missionsDir, ISSUES_FILE));
 	if (!(await file.exists())) return [];
 	const content = await file.text();
 	return deduplicateById(parseJsonl<Issue>(content));
 }
 
-export async function writeIssues(seedsDir: string, issues: Issue[]): Promise<void> {
-	const filePath = join(seedsDir, ISSUES_FILE);
+export async function writeIssues(missionsDir: string, issues: Issue[]): Promise<void> {
+	const filePath = join(missionsDir, ISSUES_FILE);
 	const tmpPath = `${filePath}.tmp.${randomBytes(4).toString("hex")}`;
 	const content = issues.length === 0 ? "" : `${issues.map((i) => JSON.stringify(i)).join("\n")}\n`;
 	await Bun.write(tmpPath, content);
@@ -152,15 +152,15 @@ export async function writeIssues(seedsDir: string, issues: Issue[]): Promise<vo
 }
 
 /**
- * Append a single issue to `.seeds/issues.jsonl`.
+ * Append a single issue to `.luuna/missions/issues.jsonl`.
  *
- * Caller must hold `withLock(issuesPath(seedsDir), …)` for the duration of this
+ * Caller must hold `withLock(issuesPath(missionsDir), …)` for the duration of this
  * call — this helper does NOT acquire the file lock itself. Concurrent writes
  * without the lock can lose data (read/append/rename is not atomic across
  * processes on its own).
  */
-export async function appendIssue(seedsDir: string, issue: Issue): Promise<void> {
-	const filePath = join(seedsDir, ISSUES_FILE);
+export async function appendIssue(missionsDir: string, issue: Issue): Promise<void> {
+	const filePath = join(missionsDir, ISSUES_FILE);
 	const tmpPath = `${filePath}.tmp.${randomBytes(4).toString("hex")}`;
 	const file = Bun.file(filePath);
 	const existing = (await file.exists()) ? await file.text() : "";
@@ -169,15 +169,15 @@ export async function appendIssue(seedsDir: string, issue: Issue): Promise<void>
 	renameSync(tmpPath, filePath);
 }
 
-export async function readTemplates(seedsDir: string): Promise<Template[]> {
-	const file = Bun.file(join(seedsDir, TEMPLATES_FILE));
+export async function readTemplates(missionsDir: string): Promise<Template[]> {
+	const file = Bun.file(join(missionsDir, TEMPLATES_FILE));
 	if (!(await file.exists())) return [];
 	const content = await file.text();
 	return deduplicateById(parseJsonl<Template>(content));
 }
 
-export async function writeTemplates(seedsDir: string, templates: Template[]): Promise<void> {
-	const filePath = join(seedsDir, TEMPLATES_FILE);
+export async function writeTemplates(missionsDir: string, templates: Template[]): Promise<void> {
+	const filePath = join(missionsDir, TEMPLATES_FILE);
 	const tmpPath = `${filePath}.tmp.${randomBytes(4).toString("hex")}`;
 	const content =
 		templates.length === 0 ? "" : `${templates.map((t) => JSON.stringify(t)).join("\n")}\n`;
@@ -186,14 +186,14 @@ export async function writeTemplates(seedsDir: string, templates: Template[]): P
 }
 
 /**
- * Append a single template to `.seeds/templates.jsonl`.
+ * Append a single template to `.luuna/missions/templates.jsonl`.
  *
- * Caller must hold `withLock(templatesPath(seedsDir), …)` for the duration of
+ * Caller must hold `withLock(templatesPath(missionsDir), …)` for the duration of
  * this call — this helper does NOT acquire the file lock itself. Concurrent
  * writes without the lock can lose data.
  */
-export async function appendTemplate(seedsDir: string, template: Template): Promise<void> {
-	const filePath = join(seedsDir, TEMPLATES_FILE);
+export async function appendTemplate(missionsDir: string, template: Template): Promise<void> {
+	const filePath = join(missionsDir, TEMPLATES_FILE);
 	const tmpPath = `${filePath}.tmp.${randomBytes(4).toString("hex")}`;
 	const file = Bun.file(filePath);
 	const existing = (await file.exists()) ? await file.text() : "";
@@ -202,27 +202,27 @@ export async function appendTemplate(seedsDir: string, template: Template): Prom
 	renameSync(tmpPath, filePath);
 }
 
-export function issuesPath(seedsDir: string): string {
-	return join(seedsDir, ISSUES_FILE);
+export function issuesPath(missionsDir: string): string {
+	return join(missionsDir, ISSUES_FILE);
 }
 
-export function templatesPath(seedsDir: string): string {
-	return join(seedsDir, TEMPLATES_FILE);
+export function templatesPath(missionsDir: string): string {
+	return join(missionsDir, TEMPLATES_FILE);
 }
 
-export function plansPath(seedsDir: string): string {
-	return join(seedsDir, PLANS_FILE);
+export function plansPath(missionsDir: string): string {
+	return join(missionsDir, PLANS_FILE);
 }
 
-export async function readPlans(seedsDir: string): Promise<Plan[]> {
-	const file = Bun.file(join(seedsDir, PLANS_FILE));
+export async function readPlans(missionsDir: string): Promise<Plan[]> {
+	const file = Bun.file(join(missionsDir, PLANS_FILE));
 	if (!(await file.exists())) return [];
 	const content = await file.text();
 	return deduplicateById(parseJsonl<Plan>(content));
 }
 
-export async function writePlans(seedsDir: string, plans: Plan[]): Promise<void> {
-	const filePath = join(seedsDir, PLANS_FILE);
+export async function writePlans(missionsDir: string, plans: Plan[]): Promise<void> {
+	const filePath = join(missionsDir, PLANS_FILE);
 	const tmpPath = `${filePath}.tmp.${randomBytes(4).toString("hex")}`;
 	const content = plans.length === 0 ? "" : `${plans.map((p) => JSON.stringify(p)).join("\n")}\n`;
 	await Bun.write(tmpPath, content);
@@ -230,14 +230,14 @@ export async function writePlans(seedsDir: string, plans: Plan[]): Promise<void>
 }
 
 /**
- * Append a single plan to `.seeds/plans.jsonl`.
+ * Append a single plan to `.luuna/missions/plans.jsonl`.
  *
- * Caller must hold `withLock(plansPath(seedsDir), …)` for the duration of this
+ * Caller must hold `withLock(plansPath(missionsDir), …)` for the duration of this
  * call — this helper does NOT acquire the file lock itself. Concurrent writes
  * without the lock can lose data.
  */
-export async function appendPlan(seedsDir: string, plan: Plan): Promise<void> {
-	const filePath = join(seedsDir, PLANS_FILE);
+export async function appendPlan(missionsDir: string, plan: Plan): Promise<void> {
+	const filePath = join(missionsDir, PLANS_FILE);
 	const tmpPath = `${filePath}.tmp.${randomBytes(4).toString("hex")}`;
 	const file = Bun.file(filePath);
 	const existing = (await file.exists()) ? await file.text() : "";

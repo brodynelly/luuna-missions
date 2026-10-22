@@ -11,8 +11,8 @@ export interface PlanContext {
 	plansBySeed: Map<string, Plan>;
 }
 
-export async function loadPlanContext(seedsDir: string): Promise<PlanContext> {
-	const plans = await readPlans(seedsDir);
+export async function loadPlanContext(missionsDir: string): Promise<PlanContext> {
+	const plans = await readPlans(missionsDir);
 	const plansById = new Map(plans.map((p) => [p.id, p]));
 	const plansBySeed = new Map<string, Plan>();
 	for (const p of plans) {
@@ -33,12 +33,12 @@ export function planForIssue(ctx: PlanContext, issue: Issue): Plan | undefined {
 export function planLineSuffix(plan: Plan | undefined): string {
 	if (!plan) return "";
 	if (plan.status === "draft") {
-		return ` ${accent("[plan in draft — run sd plan submit]")}`;
+		return ` ${accent("[plan in draft — run luuna-missions plan submit]")}`;
 	}
 	return ` ${muted(`[plan ${plan.status}]`)}`;
 }
 
-// Returns true if `sd ready` should surface this seed regardless of normal
+// Returns true if `luuna-missions ready` should surface this seed regardless of normal
 // blocker checks. Planning takes precedence over implementation when a seed
 // has a draft plan attached.
 export function isPlanDraftBlocking(plan: Plan | undefined): boolean {

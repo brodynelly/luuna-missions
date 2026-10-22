@@ -21,7 +21,7 @@ async function createSeed(title: string, cwd: string): Promise<string> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-close-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-close-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -29,7 +29,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd close", () => {
+describe("luuna-missions close", () => {
 	test("closes an issue and records --reason, removes blockedBy on dependents", async () => {
 		const a = await createSeed("A", tmpDir);
 		const b = await createSeed("B", tmpDir);
@@ -64,12 +64,12 @@ describe("sd close", () => {
 	test("missing positional ids errors out", async () => {
 		const { exitCode, stderr } = await run(["close"], tmpDir);
 		expect(exitCode).not.toBe(0);
-		expect(stderr).toContain("Usage: sd close");
+		expect(stderr).toContain("Usage: luuna-missions close");
 	});
 
 	test("unknown id throws and exits non-zero", async () => {
-		const { exitCode, stderr } = await run(["close", "seeds-9999"], tmpDir);
+		const { exitCode, stderr } = await run(["close", "missions-9999"], tmpDir);
 		expect(exitCode).not.toBe(0);
-		expect(stderr).toContain("Issue not found: seeds-9999");
+		expect(stderr).toContain("Issue not found: missions-9999");
 	});
 });

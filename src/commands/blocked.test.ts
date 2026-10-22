@@ -24,13 +24,13 @@ async function attachPlan(
 		createdAt: now,
 		updatedAt: now,
 	};
-	const planPath = join(tmpDir, ".seeds", "plans.jsonl");
+	const planPath = join(tmpDir, ".luuna/missions", "plans.jsonl");
 	const existing = (await Bun.file(planPath).exists()) ? await Bun.file(planPath).text() : "";
 	await Bun.write(
 		planPath,
 		`${existing.trim() ? `${existing.trimEnd()}\n` : ""}${JSON.stringify(planRow)}\n`,
 	);
-	const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+	const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 	const lines = (await Bun.file(issuesPath).text()).trim().split("\n");
 	const updated = lines.map((line) => {
 		const obj = JSON.parse(line) as { id: string; plan_id?: string };
@@ -55,7 +55,7 @@ async function createSeed(title: string, cwd: string): Promise<string> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-blocked-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-blocked-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -63,7 +63,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd blocked", () => {
+describe("luuna-missions blocked", () => {
 	test("--json lists issues with unresolved blockers and skips closed-blocker case", async () => {
 		const a = await createSeed("A", tmpDir);
 		const b = await createSeed("B", tmpDir);

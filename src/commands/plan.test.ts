@@ -16,8 +16,8 @@ async function run(
 let tmpDir: string;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-plan-test-"));
-	// Initialize a seeds project so plan commands have a target
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-plan-test-"));
+	// Initialize a missions project so plan commands have a target
 	await run(["init"], tmpDir);
 });
 
@@ -25,7 +25,7 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd plan (parent)", () => {
+describe("luuna-missions plan (parent)", () => {
 	test("--help lists subcommands", async () => {
 		const { stdout, exitCode } = await run(["plan", "--help"], tmpDir);
 		expect(exitCode).toBe(0);
@@ -64,7 +64,7 @@ async function createSeed(cwd: string, title: string, type = "task"): Promise<st
 }
 
 const VALID_CONTEXT =
-	"This work matters because we need to enable structured planning for AI agents using seeds.";
+	"This work matters because we need to enable structured planning for AI agents using missions.";
 
 function validPlanFor(): {
 	template: string;
@@ -78,7 +78,7 @@ function validPlanFor(): {
 			alternatives: [],
 			steps: [
 				// Forward semantics: step i with blocks: [j] means step i blocks step j.
-				// Indices are 1-based (seeds-185f) — step 1 is the first step.
+				// Indices are 1-based (missions-185f) — step 1 is the first step.
 				{ title: "Step A", type: "task", priority: 2, blocks: [2] }, // A blocks B
 				{ title: "Step B", type: "task", priority: 2, blocks: [] },
 				{ title: "Step C", type: "task", priority: 2, blocks: [4] }, // C blocks D
@@ -104,7 +104,7 @@ async function readJsonl<T>(path: string): Promise<T[]> {
 		.map((l) => JSON.parse(l) as T);
 }
 
-describe("sd plan templates", () => {
+describe("luuna-missions plan templates", () => {
 	test("human output lists feature template", async () => {
 		const { stdout, exitCode } = await run(["plan", "templates"], tmpDir);
 		expect(exitCode).toBe(0);
@@ -127,7 +127,7 @@ describe("sd plan templates", () => {
 	});
 });
 
-describe("sd plan prompt", () => {
+describe("luuna-missions plan prompt", () => {
 	test("--json emits the documented plan_request shape", async () => {
 		const seedId = await createSeed(tmpDir, "Add OAuth login");
 		const { stdout, exitCode } = await run(["plan", "prompt", seedId, "--json"], tmpDir);
@@ -220,7 +220,7 @@ describe("sd plan prompt", () => {
 	});
 });
 
-describe("sd plan submit", () => {
+describe("luuna-missions plan submit", () => {
 	test("golden path: spawns children with correct blockedBy id remap", async () => {
 		const seedId = await createSeed(tmpDir, "Parent for plan");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
@@ -246,7 +246,7 @@ describe("sd plan submit", () => {
 			plan_step_index?: number;
 			blockedBy?: string[];
 			blocks?: string[];
-		}>(join(tmpDir, ".seeds", "issues.jsonl"));
+		}>(join(tmpDir, ".luuna/missions", "issues.jsonl"));
 
 		const [aa01, aa02, aa03, aa04] = result.children;
 		const child = (id?: string) => issues.find((i) => i.id === id);
@@ -282,7 +282,7 @@ describe("sd plan submit", () => {
 			status: string;
 			revision: number;
 			children: string[];
-		}>(join(tmpDir, ".seeds", "plans.jsonl"));
+		}>(join(tmpDir, ".luuna/missions", "plans.jsonl"));
 		expect(plans.length).toBe(1);
 		expect(plans[0]?.id).toBe(result.plan_id);
 		expect(plans[0]?.seed).toBe(seedId);
@@ -299,8 +299,8 @@ describe("sd plan submit", () => {
 		const stripped = { ...bad, sections: restSections };
 		const planPath = await writePlanFile(tmpDir, stripped);
 
-		const issuesBefore = await readJsonl<unknown>(join(tmpDir, ".seeds", "issues.jsonl"));
-		const plansBefore = await readJsonl<unknown>(join(tmpDir, ".seeds", "plans.jsonl"));
+		const issuesBefore = await readJsonl<unknown>(join(tmpDir, ".luuna/missions", "issues.jsonl"));
+		const plansBefore = await readJsonl<unknown>(join(tmpDir, ".luuna/missions", "plans.jsonl"));
 
 		const { stderr, stdout, exitCode } = await run(
 			["plan", "submit", seedId, "--plan", planPath],
@@ -316,8 +316,8 @@ describe("sd plan submit", () => {
 		expect(diff.current).toEqual(stripped);
 
 		// No writes
-		const issuesAfter = await readJsonl<unknown>(join(tmpDir, ".seeds", "issues.jsonl"));
-		const plansAfter = await readJsonl<unknown>(join(tmpDir, ".seeds", "plans.jsonl"));
+		const issuesAfter = await readJsonl<unknown>(join(tmpDir, ".luuna/missions", "issues.jsonl"));
+		const plansAfter = await readJsonl<unknown>(join(tmpDir, ".luuna/missions", "plans.jsonl"));
 		expect(issuesAfter.length).toBe(issuesBefore.length);
 		expect(plansAfter.length).toBe(plansBefore.length);
 	});
@@ -377,12 +377,12 @@ describe("sd plan submit", () => {
 		expect(planIdMatch).not.toBeNull();
 		const planId = planIdMatch?.[1] ?? "";
 		expect(stderr).toContain("Next:");
-		expect(stderr).toContain(`sd plan show ${planId}`);
-		expect(stderr).toContain("sd ready");
-		expect(stderr).toContain(`sd plan review ${planId} --by`);
+		expect(stderr).toContain(`luuna-missions plan show ${planId}`);
+		expect(stderr).toContain("luuna-missions ready");
+		expect(stderr).toContain(`luuna-missions plan review ${planId} --by`);
 		// stdout must not contain the hints — those are stderr-only.
 		expect(stdout).not.toContain("Next:");
-		expect(stdout).not.toContain("sd ready");
+		expect(stdout).not.toContain("luuna-missions ready");
 	});
 
 	test("--json submit leaves stdout JSON intact and still emits Next on stderr", async () => {
@@ -404,7 +404,7 @@ describe("sd plan submit", () => {
 	});
 });
 
-describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => {
+describe("luuna-missions plan submit: existing_seed adoption (missions-24c6 / pl-43ff)", () => {
 	type IssueRow = {
 		id: string;
 		title: string;
@@ -422,7 +422,7 @@ describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => 
 	};
 
 	async function readIssues(): Promise<IssueRow[]> {
-		return readJsonl<IssueRow>(join(tmpDir, ".seeds/issues.jsonl"));
+		return readJsonl<IssueRow>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 	}
 
 	function planWithAdoption(
@@ -472,7 +472,7 @@ describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => 
 		// Forward edges: step 1 blocks step 2 (fresh) and the parent seed.
 		expect(adopt?.blocks).toEqual([result.children[1] ?? "", parent]);
 		// Description carries the backref block.
-		expect(adopt?.description ?? "").toContain("seeds:plan-backref:start");
+		expect(adopt?.description ?? "").toContain("missions:plan-backref:start");
 		expect(adopt?.description ?? "").toContain(`Step 1 of plan ${result.plan_id}`);
 
 		// Fresh sibling: blockedBy includes the adopted seed (cross-edge wiring).
@@ -484,7 +484,7 @@ describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => 
 
 		// Plan row references the adopted id in children.
 		const plans = await readJsonl<{ id: string; children: string[] }>(
-			join(tmpDir, ".seeds/plans.jsonl"),
+			join(tmpDir, ".luuna/missions/plans.jsonl"),
 		);
 		expect(plans.find((p) => p.id === result.plan_id)?.children).toEqual(result.children);
 	});
@@ -534,7 +534,7 @@ describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => 
 		expect(adopt?.title).toBe("Pre-existing work");
 		// Description: backref block first, then the author's original notes.
 		const desc = adopt?.description ?? "";
-		expect(desc.indexOf("seeds:plan-backref:start")).toBeLessThan(
+		expect(desc.indexOf("missions:plan-backref:start")).toBeLessThan(
 			desc.indexOf("original notes the author wrote"),
 		);
 		expect(desc).toContain("original notes the author wrote");
@@ -660,20 +660,20 @@ describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => 
 	test("validation failure (non-existent adoptee) leaves issues + plans untouched", async () => {
 		const parent = await createSeed(tmpDir, "Parent");
 		const before = await readIssues();
-		const plansBefore = await readJsonl<unknown>(join(tmpDir, ".seeds/plans.jsonl"));
+		const plansBefore = await readJsonl<unknown>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 
 		const planPath = await writePlanFile(tmpDir, planWithAdoption("nope-1234"));
 		const { exitCode } = await run(["plan", "submit", parent, "--plan", planPath], tmpDir);
 		expect(exitCode).not.toBe(0);
 
 		const after = await readIssues();
-		const plansAfter = await readJsonl<unknown>(join(tmpDir, ".seeds/plans.jsonl"));
+		const plansAfter = await readJsonl<unknown>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 		expect(after.length).toBe(before.length);
 		expect(plansAfter.length).toBe(plansBefore.length);
 	});
 
-	// seeds-5583 / warren §11.Q — synthesis: mint a parent seed + plan whose
-	// children are entirely existing seeds, with no titles on the steps.
+	// missions-5583 / warren §11.Q — synthesis: mint a parent seed + plan whose
+	// children are entirely existing missions, with no titles on the steps.
 	test("synthesis: steps may omit title when existing_seed is set", async () => {
 		const parent = await createSeed(tmpDir, "Synthesis parent");
 		const a = await createSeed(tmpDir, "Adoptee A");
@@ -707,7 +707,7 @@ describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => 
 		expect(find(c)?.plan_id).toBe(result.plan_id);
 		// Plan row's adoptedChildren matches the children list (all adopted).
 		const plans = await readJsonl<{ id: string; adoptedChildren?: string[] }>(
-			join(tmpDir, ".seeds/plans.jsonl"),
+			join(tmpDir, ".luuna/missions/plans.jsonl"),
 		);
 		expect(plans.find((p) => p.id === result.plan_id)?.adoptedChildren).toEqual([a, b, c]);
 	});
@@ -744,7 +744,7 @@ describe("sd plan submit: existing_seed adoption (seeds-24c6 / pl-43ff)", () => 
 	});
 });
 
-describe("sd plan adopt (seeds-2b93 / pl-43ff)", () => {
+describe("luuna-missions plan adopt (missions-2b93 / pl-43ff)", () => {
 	type IssueRow = {
 		id: string;
 		title: string;
@@ -769,10 +769,10 @@ describe("sd plan adopt (seeds-2b93 / pl-43ff)", () => {
 	};
 
 	async function readIssuesRows(): Promise<IssueRow[]> {
-		return readJsonl<IssueRow>(join(tmpDir, ".seeds/issues.jsonl"));
+		return readJsonl<IssueRow>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 	}
 	async function readPlansRows(): Promise<PlanRow[]> {
-		return readJsonl<PlanRow>(join(tmpDir, ".seeds/plans.jsonl"));
+		return readJsonl<PlanRow>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 	}
 
 	async function submitFreshPlan(): Promise<{
@@ -821,7 +821,7 @@ describe("sd plan adopt (seeds-2b93 / pl-43ff)", () => {
 		expect(adopt?.status).toBe("open");
 		expect(adopt?.blocks).toEqual([parent]);
 		// Description carries the loose-adoption backref variant.
-		expect(adopt?.description ?? "").toContain("seeds:plan-backref:start");
+		expect(adopt?.description ?? "").toContain("missions:plan-backref:start");
 		expect(adopt?.description ?? "").toContain(`Adopted into plan ${planId}.`);
 		expect(adopt?.description ?? "").toContain(`Parent seed: ${parent}`);
 
@@ -851,7 +851,7 @@ describe("sd plan adopt (seeds-2b93 / pl-43ff)", () => {
 		expect(adopt?.blocks).toEqual([parent]);
 	});
 
-	test("adopts multiple seeds in one call; revision bumps once", async () => {
+	test("adopts multiple missions in one call; revision bumps once", async () => {
 		const { planId } = await submitFreshPlan();
 		const a = await createSeed(tmpDir, "Adoptee A");
 		const b = await createSeed(tmpDir, "Adoptee B");
@@ -912,7 +912,7 @@ describe("sd plan adopt (seeds-2b93 / pl-43ff)", () => {
 		expect(adopt?.labels).toEqual(["needs-design"]);
 		// Backref prepended; author's notes preserved underneath.
 		const desc = adopt?.description ?? "";
-		expect(desc.indexOf("seeds:plan-backref:start")).toBeLessThan(
+		expect(desc.indexOf("missions:plan-backref:start")).toBeLessThan(
 			desc.indexOf("original author notes"),
 		);
 		expect(desc).toContain("original author notes");
@@ -1040,7 +1040,7 @@ describe("sd plan adopt (seeds-2b93 / pl-43ff)", () => {
 	});
 });
 
-describe("sd plan release (seeds-2b8a / pl-43ff)", () => {
+describe("luuna-missions plan release (missions-2b8a / pl-43ff)", () => {
 	type IssueRow = {
 		id: string;
 		title: string;
@@ -1065,10 +1065,10 @@ describe("sd plan release (seeds-2b8a / pl-43ff)", () => {
 	};
 
 	async function readIssuesRows(): Promise<IssueRow[]> {
-		return readJsonl<IssueRow>(join(tmpDir, ".seeds/issues.jsonl"));
+		return readJsonl<IssueRow>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 	}
 	async function readPlansRows(): Promise<PlanRow[]> {
-		return readJsonl<PlanRow>(join(tmpDir, ".seeds/plans.jsonl"));
+		return readJsonl<PlanRow>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 	}
 
 	async function submitFreshPlan(): Promise<{
@@ -1121,8 +1121,8 @@ describe("sd plan release (seeds-2b8a / pl-43ff)", () => {
 		expect(rel?.blocks ?? []).not.toContain(parent);
 		// Backref block stripped.
 		const desc = rel?.description ?? "";
-		expect(desc).not.toContain("seeds:plan-backref:start");
-		expect(desc).not.toContain("seeds:plan-backref:end");
+		expect(desc).not.toContain("missions:plan-backref:start");
+		expect(desc).not.toContain("missions:plan-backref:end");
 
 		// Parent loses the adoptee from blockedBy (the original spawn children remain).
 		expect(par?.blockedBy ?? []).not.toContain(adoptee);
@@ -1156,7 +1156,7 @@ describe("sd plan release (seeds-2b8a / pl-43ff)", () => {
 		expect(rel?.description).toBe("original author notes");
 	});
 
-	test("releases multiple seeds in one call; revision bumps once", async () => {
+	test("releases multiple missions in one call; revision bumps once", async () => {
 		const { planId } = await submitFreshPlan();
 		const a = await createSeed(tmpDir, "A");
 		const b = await createSeed(tmpDir, "B");
@@ -1257,7 +1257,7 @@ describe("sd plan release (seeds-2b8a / pl-43ff)", () => {
 	});
 
 	test("rejects unknown plan id", async () => {
-		const { stderr, exitCode } = await run(["plan", "release", "pl-zzzz", "seeds-1234"], tmpDir);
+		const { stderr, exitCode } = await run(["plan", "release", "pl-zzzz", "missions-1234"], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain("Plan not found");
 	});
@@ -1299,7 +1299,7 @@ describe("sd plan release (seeds-2b8a / pl-43ff)", () => {
 	});
 });
 
-describe("sd plan submit --overwrite", () => {
+describe("luuna-missions plan submit --overwrite", () => {
 	async function readIssue(id: string): Promise<{
 		id: string;
 		title: string;
@@ -1311,7 +1311,7 @@ describe("sd plan submit --overwrite", () => {
 			title: string;
 			status: string;
 			blockedBy?: string[];
-		}>(join(tmpDir, ".seeds/issues.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 		const found = issues.find((i) => i.id === id);
 		if (!found) throw new Error(`issue not found: ${id}`);
 		return found;
@@ -1328,7 +1328,7 @@ describe("sd plan submit --overwrite", () => {
 			revision: number;
 			children: string[];
 			sections: Record<string, unknown>;
-		}>(join(tmpDir, ".seeds/plans.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 		const found = plans.find((p) => p.id === planId);
 		if (!found) throw new Error(`plan not found: ${planId}`);
 		return found;
@@ -1372,7 +1372,7 @@ describe("sd plan submit --overwrite", () => {
 
 		// One row in plans.jsonl, revision=2.
 		const plans = await readJsonl<{ id: string; revision: number }>(
-			join(tmpDir, ".seeds/plans.jsonl"),
+			join(tmpDir, ".luuna/missions/plans.jsonl"),
 		);
 		expect(plans.filter((p) => p.id === planId).length).toBe(1);
 		expect(plans.find((p) => p.id === planId)?.revision).toBe(2);
@@ -1438,7 +1438,7 @@ describe("sd plan submit --overwrite", () => {
 		// Stderr suggestion lines
 		for (const id of obsoleteIds) {
 			expect(overwriteResult.stderr).toContain(
-				`sd close ${id} --reason "obsoleted by plan ${firstResult.plan_id} revision 2"`,
+				`luuna-missions close ${id} --reason "obsoleted by plan ${firstResult.plan_id} revision 2"`,
 			);
 		}
 
@@ -1485,7 +1485,7 @@ describe("sd plan submit --overwrite", () => {
 			plan_id?: string;
 			blockedBy?: string[];
 			blocks?: string[];
-		}>(join(tmpDir, ".seeds/issues.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 		const spawned = newIssue.find((i) => i.id === newChildId);
 		expect(spawned?.title).toBe("Brand New Step");
 		expect(spawned?.plan_id).toBe(firstResult.plan_id);
@@ -1545,7 +1545,7 @@ describe("sd plan submit --overwrite", () => {
 	});
 });
 
-describe("sd plan submit --overwrite: existing_seed matching (seeds-99ae / pl-43ff)", () => {
+describe("luuna-missions plan submit --overwrite: existing_seed matching (missions-99ae / pl-43ff)", () => {
 	type IssueRow = {
 		id: string;
 		title: string;
@@ -1560,7 +1560,7 @@ describe("sd plan submit --overwrite: existing_seed matching (seeds-99ae / pl-43
 		type?: string;
 	};
 	async function readIssues(): Promise<IssueRow[]> {
-		return readJsonl<IssueRow>(join(tmpDir, ".seeds/issues.jsonl"));
+		return readJsonl<IssueRow>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 	}
 
 	test("existing_seed id matches a current plan-child by id (renamed step keeps the id)", async () => {
@@ -1679,7 +1679,7 @@ describe("sd plan submit --overwrite: existing_seed matching (seeds-99ae / pl-43
 		expect(ext?.plan_id).toBe(planId);
 		expect(ext?.plan_step_index).toBe(1);
 		// Backref applied.
-		expect(ext?.description ?? "").toContain("seeds:plan-backref:start");
+		expect(ext?.description ?? "").toContain("missions:plan-backref:start");
 		// Parent-blocks edge added.
 		expect(ext?.blocks ?? []).toContain(seedId);
 
@@ -1776,7 +1776,7 @@ describe("sd plan submit --overwrite: existing_seed matching (seeds-99ae / pl-43
 		expect(exitCode).not.toBe(0);
 
 		const plans = await readJsonl<{ id: string; revision: number; children: string[] }>(
-			join(tmpDir, ".seeds/plans.jsonl"),
+			join(tmpDir, ".luuna/missions/plans.jsonl"),
 		);
 		const row = plans.find((p) => p.id === planId);
 		expect(row?.revision).toBe(1);
@@ -1784,7 +1784,7 @@ describe("sd plan submit --overwrite: existing_seed matching (seeds-99ae / pl-43
 	});
 });
 
-describe("sd plan show", () => {
+describe("luuna-missions plan show", () => {
 	test("--json emits plan + child summaries", async () => {
 		const seedId = await createSeed(tmpDir, "Parent");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
@@ -1834,7 +1834,7 @@ describe("sd plan show", () => {
 	});
 });
 
-describe("sd plan show: (adopted) marker (seeds-a3ab / pl-43ff)", () => {
+describe("luuna-missions plan show: (adopted) marker (missions-a3ab / pl-43ff)", () => {
 	test("tags submit-time adopted children and leaves fresh-spawned untagged", async () => {
 		const parent = await createSeed(tmpDir, "Parent for adoption");
 		const adoptee = await createSeed(tmpDir, "Step A");
@@ -1851,7 +1851,7 @@ describe("sd plan show: (adopted) marker (seeds-a3ab / pl-43ff)", () => {
 		// Human output: adopted line carries the marker; fresh line does not.
 		const human = await run(["plan", "show", submitResult.plan_id], tmpDir);
 		expect(human.exitCode).toBe(0);
-		// seeds-5892 surfaces existing_seed as a sub-line in the Steps section, so
+		// missions-5892 surfaces existing_seed as a sub-line in the Steps section, so
 		// the adoptee id now appears on multiple lines; the (adopted) marker is
 		// emitted only on the Children-section row.
 		const adoptedLine = human.stdout
@@ -1875,7 +1875,7 @@ describe("sd plan show: (adopted) marker (seeds-a3ab / pl-43ff)", () => {
 		expect(parsed.children.find((c) => c.id === freshId)?.adopted).toBe(false);
 	});
 
-	test("post-submit sd plan adopt tags the seed; release strips the tag", async () => {
+	test("post-submit luuna-missions plan adopt tags the seed; release strips the tag", async () => {
 		const parent = await createSeed(tmpDir, "Parent");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
 		const submit = await run(["plan", "submit", parent, "--plan", planPath, "--json"], tmpDir);
@@ -1942,7 +1942,7 @@ describe("sd plan show: (adopted) marker (seeds-a3ab / pl-43ff)", () => {
 		expect(parsed.children.find((c) => c.id === adoptee)?.adopted).toBe(true);
 	});
 
-	test("sd show <seed> plan block also surfaces the (adopted) tag", async () => {
+	test("luuna-missions show <seed> plan block also surfaces the (adopted) tag", async () => {
 		const parent = await createSeed(tmpDir, "Parent");
 		const adoptee = await createSeed(tmpDir, "Step A");
 		const plan = validPlanFor();
@@ -1966,8 +1966,8 @@ describe("sd plan show: (adopted) marker (seeds-a3ab / pl-43ff)", () => {
 	});
 });
 
-describe("sd show <pl-id> routes to plan show (seeds-66de)", () => {
-	test("human output mirrors sd plan show", async () => {
+describe("luuna-missions show <pl-id> routes to plan show (missions-66de)", () => {
+	test("human output mirrors luuna-missions plan show", async () => {
 		const seedId = await createSeed(tmpDir, "Parent");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
 		const submit = await run(["plan", "submit", seedId, "--plan", planPath, "--json"], tmpDir);
@@ -2017,11 +2017,11 @@ describe("sd show <pl-id> routes to plan show (seeds-66de)", () => {
 		const { stderr, exitCode } = await run(["show", planId, "--format", "compact"], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain("not supported for plan ids");
-		expect(stderr).toContain(`sd plan show ${planId}`);
+		expect(stderr).toContain(`luuna-missions plan show ${planId}`);
 	});
 });
 
-describe("sd plan show: structured list rendering (seeds-7d17)", () => {
+describe("luuna-missions plan show: structured list rendering (missions-7d17)", () => {
 	async function submitPlan(plan: unknown): Promise<string> {
 		const seedId = await createSeed(tmpDir, "Renderer parent", "feature");
 		const planPath = await writePlanFile(tmpDir, plan);
@@ -2094,7 +2094,7 @@ describe("sd plan show: structured list rendering (seeds-7d17)", () => {
 	});
 
 	test("custom templates with declared item schemas render through the same path", async () => {
-		const cfgPath = join(tmpDir, ".seeds", "config.yaml");
+		const cfgPath = join(tmpDir, ".luuna/missions", "config.yaml");
 		const existing = await Bun.file(cfgPath).text();
 		const customBlock = [
 			"plan_templates:",
@@ -2167,7 +2167,7 @@ describe("sd plan show: structured list rendering (seeds-7d17)", () => {
 		};
 		const planId = await submitPlan(plan);
 
-		const plansPath = join(tmpDir, ".seeds", "plans.jsonl");
+		const plansPath = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const text = await Bun.file(plansPath).text();
 		const rewritten = text
 			.split("\n")
@@ -2187,9 +2187,9 @@ describe("sd plan show: structured list rendering (seeds-7d17)", () => {
 	});
 });
 
-describe("sd plan show: recursive nesting (Phase 4 / PLAN_SPEC.md:340, 425, 430)", () => {
+describe("luuna-missions plan show: recursive nesting (Phase 4 / PLAN_SPEC.md:340, 425, 430)", () => {
 	async function setMaxDepth(n: number): Promise<void> {
-		const cfgPath = join(tmpDir, ".seeds", "config.yaml");
+		const cfgPath = join(tmpDir, ".luuna/missions", "config.yaml");
 		const text = await Bun.file(cfgPath).text();
 		const lines = text.split("\n").filter((l) => !l.startsWith("max_plan_depth:"));
 		await Bun.write(cfgPath, `${lines.join("\n").trimEnd()}\nmax_plan_depth: ${n}\n`);
@@ -2290,12 +2290,12 @@ describe("sd plan show: recursive nesting (Phase 4 / PLAN_SPEC.md:340, 425, 430)
 		expect(truncated?.truncated).toBe(true);
 		expect(truncated?.plan_id).toBe(subPlanId);
 		expect(truncated?.hint).toBe(
-			`depth limit reached — use \`sd plan show ${subPlanId}\` to drill in`,
+			`depth limit reached — use \`luuna-missions plan show ${subPlanId}\` to drill in`,
 		);
 
 		// Human: hint string appears once.
 		const human = await run(["plan", "show", rootResult.plan_id], tmpDir);
-		const occurrences = human.stdout.split(`sd plan show ${subPlanId}`).length - 1;
+		const occurrences = human.stdout.split(`luuna-missions plan show ${subPlanId}`).length - 1;
 		expect(occurrences).toBe(1);
 		expect(human.stdout).toContain("depth limit reached");
 	});
@@ -2356,7 +2356,7 @@ describe("sd plan show: recursive nesting (Phase 4 / PLAN_SPEC.md:340, 425, 430)
 	});
 });
 
-describe("sd plan list", () => {
+describe("luuna-missions plan list", () => {
 	async function submitPlan(seedTitle: string): Promise<{ planId: string; seedId: string }> {
 		const seedId = await createSeed(tmpDir, seedTitle);
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
@@ -2445,7 +2445,7 @@ describe("sd plan list", () => {
 	});
 });
 
-describe("sd plan submit: step.plan_template (Phase 4 / PLAN_SPEC.md:329-342)", () => {
+describe("luuna-missions plan submit: step.plan_template (Phase 4 / PLAN_SPEC.md:329-342)", () => {
 	function planWithSubPlanStep(): { template: string; sections: Record<string, unknown> } {
 		const base = validPlanFor();
 		base.sections.steps = [
@@ -2477,7 +2477,7 @@ describe("sd plan submit: step.plan_template (Phase 4 / PLAN_SPEC.md:329-342)", 
 			plan_id?: string;
 			plan_step_index?: number;
 			requires_plan?: boolean;
-		}>(join(tmpDir, ".seeds", "issues.jsonl"));
+		}>(join(tmpDir, ".luuna/missions", "issues.jsonl"));
 
 		const subPlanChild = issues.find((i) => i.id === result.children[0]);
 		const plainChild = issues.find((i) => i.id === result.children[1]);
@@ -2491,7 +2491,7 @@ describe("sd plan submit: step.plan_template (Phase 4 / PLAN_SPEC.md:329-342)", 
 		expect(plainChild?.plan_id).toBe(result.plan_id);
 	});
 
-	test("requires_plan child is hidden from sd ready (composes with Task 1)", async () => {
+	test("requires_plan child is hidden from luuna-missions ready (composes with Task 1)", async () => {
 		const seedId = await createSeed(tmpDir, "Parent");
 		const planPath = await writePlanFile(tmpDir, planWithSubPlanStep());
 		const submit = await run(["plan", "submit", seedId, "--plan", planPath, "--json"], tmpDir);
@@ -2503,7 +2503,7 @@ describe("sd plan submit: step.plan_template (Phase 4 / PLAN_SPEC.md:329-342)", 
 		expect(ready.issues.some((i) => i.id === subPlanChild)).toBe(false);
 	});
 
-	test("sd plan prompt on the spawned child inherits plan_template from parent step", async () => {
+	test("luuna-missions plan prompt on the spawned child inherits plan_template from parent step", async () => {
 		const seedId = await createSeed(tmpDir, "Parent");
 		const planPath = await writePlanFile(tmpDir, planWithSubPlanStep());
 		const submit = await run(["plan", "submit", seedId, "--plan", planPath, "--json"], tmpDir);
@@ -2542,12 +2542,12 @@ describe("sd plan submit: step.plan_template (Phase 4 / PLAN_SPEC.md:329-342)", 
 		expect(stderr).toContain("Bad sub-plan ref");
 
 		// No writes — plans.jsonl stays empty.
-		const planRows = await readJsonl<unknown>(join(tmpDir, ".seeds/plans.jsonl"));
+		const planRows = await readJsonl<unknown>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 		expect(planRows.length).toBe(0);
 	});
 });
 
-describe("sd plan validate", () => {
+describe("luuna-missions plan validate", () => {
 	async function submitOne(): Promise<string> {
 		const seedId = await createSeed(tmpDir, "Parent for validate");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
@@ -2575,7 +2575,7 @@ describe("sd plan validate", () => {
 	test("tampered plan emits partial-state diff to stderr", async () => {
 		const planId = await submitOne();
 		// Tamper: rewrite plans.jsonl removing acceptance from the only plan
-		const path = join(tmpDir, ".seeds", "plans.jsonl");
+		const path = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const text = await Bun.file(path).text();
 		const lines = text.split("\n").filter((l) => l.trim());
 		const planRow = JSON.parse(lines[0] ?? "{}");
@@ -2620,7 +2620,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 			createdAt: now,
 			updatedAt: now,
 		};
-		const planPath = join(tmpDir, ".seeds", "plans.jsonl");
+		const planPath = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const existing = await Bun.file(planPath).text();
 		await Bun.write(
 			planPath,
@@ -2628,7 +2628,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		);
 
 		// Set plan_id on the seed so plan-context lookup matches.
-		const issuesPath = join(tmpDir, ".seeds", "issues.jsonl");
+		const issuesPath = join(tmpDir, ".luuna/missions", "issues.jsonl");
 		const issuesText = await Bun.file(issuesPath).text();
 		const lines = issuesText.split("\n").filter((l) => l.trim());
 		const updated = lines.map((l) => {
@@ -2639,7 +2639,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		await Bun.write(issuesPath, `${updated.join("\n")}\n`);
 	}
 
-	test("sd ready surfaces a seed with a draft plan and shows the hint", async () => {
+	test("luuna-missions ready surfaces a seed with a draft plan and shows the hint", async () => {
 		const seedId = await createSeed(tmpDir, "Needs planning");
 		await injectDraftPlan(seedId);
 		const { stdout: human, exitCode } = await run(["ready"], tmpDir);
@@ -2655,7 +2655,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		expect(found?.plan_status).toBe("draft");
 	});
 
-	test("sd ready surfaces draft-plan seed even when blocked", async () => {
+	test("luuna-missions ready surfaces draft-plan seed even when blocked", async () => {
 		const blocker = await createSeed(tmpDir, "Blocker");
 		const seedId = await createSeed(tmpDir, "Blocked but planning");
 		await run(["dep", "add", seedId, blocker], tmpDir);
@@ -2665,7 +2665,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		expect(result.issues.some((i) => i.id === seedId)).toBe(true);
 	});
 
-	test("sd show displays children inline for an approved plan", async () => {
+	test("luuna-missions show displays children inline for an approved plan", async () => {
 		const seedId = await createSeed(tmpDir, "Parent");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
 		const submit = await run(["plan", "submit", seedId, "--plan", planPath, "--json"], tmpDir);
@@ -2689,7 +2689,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		expect(result.plan_children?.length).toBe(4);
 	});
 
-	test("sd show displays draft hint when plan is in draft", async () => {
+	test("luuna-missions show displays draft hint when plan is in draft", async () => {
 		const seedId = await createSeed(tmpDir, "Drafter");
 		await injectDraftPlan(seedId);
 		const { stdout, exitCode } = await run(["show", seedId], tmpDir);
@@ -2697,7 +2697,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		expect(stdout).toContain("plan in draft");
 	});
 
-	test("sd list shows a plan status indicator for seeds with plans", async () => {
+	test("luuna-missions list shows a plan status indicator for missions with plans", async () => {
 		const planSeed = await createSeed(tmpDir, "Has plan");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
 		await run(["plan", "submit", planSeed, "--plan", planPath, "--json"], tmpDir);
@@ -2714,7 +2714,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		expect(parent?.plan_children?.length).toBe(4);
 	});
 
-	test("sd search --json annotates seeds that have plans", async () => {
+	test("luuna-missions search --json annotates missions that have plans", async () => {
 		const planSeed = await createSeed(tmpDir, "Searchable plan parent");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
 		await run(["plan", "submit", planSeed, "--plan", planPath, "--json"], tmpDir);
@@ -2736,7 +2736,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		expect(plainEntry?.plan_status).toBeUndefined();
 	});
 
-	test("sd blocked --json annotates seeds that have plans", async () => {
+	test("luuna-missions blocked --json annotates missions that have plans", async () => {
 		const blocker = await createSeed(tmpDir, "Blocker for plan parent");
 		const planSeed = await createSeed(tmpDir, "Blocked plan parent");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
@@ -2762,7 +2762,7 @@ describe("plan-awareness integration: ready / show / list", () => {
 		expect(plainEntry?.plan_status).toBeUndefined();
 	});
 
-	test("seeds without plans render exactly as before (regression)", async () => {
+	test("missions without plans render exactly as before (regression)", async () => {
 		const seedId = await createSeed(tmpDir, "Plain seed");
 		const { stdout: human } = await run(["list"], tmpDir);
 		expect(human).toContain(seedId);
@@ -2787,7 +2787,7 @@ async function submitPlanFor(seedId: string): Promise<string> {
 async function readPlansFromDisk(): Promise<
 	Array<{ id: string; outcome?: string; outcomeNote?: string; reviewedBy?: string }>
 > {
-	const path = join(tmpDir, ".seeds", "plans.jsonl");
+	const path = join(tmpDir, ".luuna/missions", "plans.jsonl");
 	const text = await Bun.file(path).text();
 	return text
 		.split("\n")
@@ -2795,7 +2795,7 @@ async function readPlansFromDisk(): Promise<
 		.map((l) => JSON.parse(l));
 }
 
-describe("sd plan outcome (Phase 5 / PLAN_SPEC.md:393-402)", () => {
+describe("luuna-missions plan outcome (Phase 5 / PLAN_SPEC.md:393-402)", () => {
 	test("--result success persists outcome on the plan row", async () => {
 		const seed = await createSeed(tmpDir, "Outcome target");
 		const planId = await submitPlanFor(seed);
@@ -2877,7 +2877,7 @@ describe("sd plan outcome (Phase 5 / PLAN_SPEC.md:393-402)", () => {
 	});
 });
 
-describe("sd plan review (Phase 5 / PLAN_SPEC.md:404-413)", () => {
+describe("luuna-missions plan review (Phase 5 / PLAN_SPEC.md:404-413)", () => {
 	test("--by sets reviewedBy and is informational only", async () => {
 		const seed = await createSeed(tmpDir, "Reviewed");
 		const planId = await submitPlanFor(seed);
@@ -2924,7 +2924,7 @@ describe("sd plan review (Phase 5 / PLAN_SPEC.md:404-413)", () => {
 			createdAt: now,
 			updatedAt: now,
 		};
-		const planPath = join(tmpDir, ".seeds", "plans.jsonl");
+		const planPath = join(tmpDir, ".luuna/missions", "plans.jsonl");
 		const existing = await Bun.file(planPath).text();
 		await Bun.write(
 			planPath,
@@ -3012,8 +3012,8 @@ function validRefactorPlan(): { template: string; sections: Record<string, unkno
 	};
 }
 
-describe("sd plan: built-in bug template (Phase 5 / PLAN_SPEC.md:268)", () => {
-	test("sd plan templates lists bug", async () => {
+describe("luuna-missions plan: built-in bug template (Phase 5 / PLAN_SPEC.md:268)", () => {
+	test("luuna-missions plan templates lists bug", async () => {
 		const { stdout } = await run(["plan", "templates"], tmpDir);
 		expect(stdout).toContain("bug");
 	});
@@ -3090,7 +3090,7 @@ describe("sd plan: built-in bug template (Phase 5 / PLAN_SPEC.md:268)", () => {
 	});
 
 	test("override: project config wins over built-in bug template", async () => {
-		const cfgPath = join(tmpDir, ".seeds", "config.yaml");
+		const cfgPath = join(tmpDir, ".luuna/missions", "config.yaml");
 		const text = await Bun.file(cfgPath).text();
 		await Bun.write(
 			cfgPath,
@@ -3107,8 +3107,8 @@ describe("sd plan: built-in bug template (Phase 5 / PLAN_SPEC.md:268)", () => {
 	});
 });
 
-describe("sd plan: built-in refactor template (Phase 5 / PLAN_SPEC.md:269)", () => {
-	test("sd plan templates lists refactor", async () => {
+describe("luuna-missions plan: built-in refactor template (Phase 5 / PLAN_SPEC.md:269)", () => {
+	test("luuna-missions plan templates lists refactor", async () => {
 		const { stdout } = await run(["plan", "templates"], tmpDir);
 		expect(stdout).toContain("refactor");
 	});
@@ -3176,7 +3176,7 @@ describe("sd plan: built-in refactor template (Phase 5 / PLAN_SPEC.md:269)", () 
 	});
 
 	test("override: project config wins over built-in refactor template", async () => {
-		const cfgPath = join(tmpDir, ".seeds", "config.yaml");
+		const cfgPath = join(tmpDir, ".luuna/missions", "config.yaml");
 		const text = await Bun.file(cfgPath).text();
 		await Bun.write(
 			cfgPath,
@@ -3196,7 +3196,7 @@ describe("sd plan: built-in refactor template (Phase 5 / PLAN_SPEC.md:269)", () 
 	});
 });
 
-describe("sd plan submit: child backref block (seeds-76af)", () => {
+describe("luuna-missions plan submit: child backref block (missions-76af)", () => {
 	type IssueRow = {
 		id: string;
 		title: string;
@@ -3207,7 +3207,7 @@ describe("sd plan submit: child backref block (seeds-76af)", () => {
 	};
 
 	async function readIssueRow(id: string): Promise<IssueRow> {
-		const issues = await readJsonl<IssueRow>(join(tmpDir, ".seeds/issues.jsonl"));
+		const issues = await readJsonl<IssueRow>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 		const found = issues.find((i) => i.id === id);
 		if (!found) throw new Error(`issue not found: ${id}`);
 		return found;
@@ -3222,12 +3222,12 @@ describe("sd plan submit: child backref block (seeds-76af)", () => {
 		const childB = await readIssueRow(result.children[1] ?? "");
 		expect(childB.description).toBeDefined();
 		const desc = childB.description ?? "";
-		expect(desc).toContain("seeds:plan-backref:start");
+		expect(desc).toContain("missions:plan-backref:start");
 		expect(desc).toContain(`Step 2 of plan ${result.plan_id}.`);
 		expect(desc).toContain(`Parent seed: ${seedId} — Add OAuth2 device-flow authentication`);
 		expect(desc).toContain("Plan template: feature");
 		expect(desc).toContain("Plan approach: Hardcoded TS template + AJV schema");
-		expect(desc).toContain(`Run \`sd plan show ${result.plan_id}\``);
+		expect(desc).toContain(`Run \`luuna-missions plan show ${result.plan_id}\``);
 	});
 
 	test("plan_template children also receive a backref", async () => {
@@ -3329,7 +3329,7 @@ describe("sd plan submit: child backref block (seeds-76af)", () => {
 	});
 });
 
-describe("sd show on plan-spawned seeds", () => {
+describe("luuna-missions show on plan-spawned missions", () => {
 	test("labels the plan's step list as 'Plan steps', not 'Children'", async () => {
 		const seedId = await createSeed(tmpDir, "Parent for show heading");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
@@ -3345,7 +3345,7 @@ describe("sd show on plan-spawned seeds", () => {
 		expect(stdout).not.toContain("Children (");
 	});
 
-	test("sd plan show keeps 'Children' framing", async () => {
+	test("luuna-missions plan show keeps 'Children' framing", async () => {
 		const seedId = await createSeed(tmpDir, "Parent for plan-show heading");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
 		const submit = await run(["plan", "submit", seedId, "--plan", planPath, "--json"], tmpDir);
@@ -3361,7 +3361,7 @@ describe("sd show on plan-spawned seeds", () => {
 	});
 });
 
-describe("sd plan {show,validate,outcome,review}: accept seed id (seeds-51bc)", () => {
+describe("luuna-missions plan {show,validate,outcome,review}: accept seed id (missions-51bc)", () => {
 	async function setup(): Promise<{
 		seedWithPlan: string;
 		planId: string;
@@ -3400,7 +3400,7 @@ describe("sd plan {show,validate,outcome,review}: accept seed id (seeds-51bc)", 
 		const { stderr, exitCode } = await run(["plan", "show", seedNoPlan], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain(`Seed ${seedNoPlan} has no plan`);
-		expect(stderr).toContain(`sd plan submit ${seedNoPlan}`);
+		expect(stderr).toContain(`luuna-missions plan submit ${seedNoPlan}`);
 	});
 
 	test("show: unknown id errors cleanly", async () => {
@@ -3432,7 +3432,7 @@ describe("sd plan {show,validate,outcome,review}: accept seed id (seeds-51bc)", 
 		const { stderr, exitCode } = await run(["plan", "validate", seedNoPlan], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain(`Seed ${seedNoPlan} has no plan`);
-		expect(stderr).toContain(`sd plan submit ${seedNoPlan}`);
+		expect(stderr).toContain(`luuna-missions plan submit ${seedNoPlan}`);
 	});
 
 	test("validate: unknown id errors cleanly", async () => {
@@ -3473,7 +3473,7 @@ describe("sd plan {show,validate,outcome,review}: accept seed id (seeds-51bc)", 
 		);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain(`Seed ${seedNoPlan} has no plan`);
-		expect(stderr).toContain(`sd plan submit ${seedNoPlan}`);
+		expect(stderr).toContain(`luuna-missions plan submit ${seedNoPlan}`);
 	});
 
 	test("outcome: unknown id errors cleanly", async () => {
@@ -3514,7 +3514,7 @@ describe("sd plan {show,validate,outcome,review}: accept seed id (seeds-51bc)", 
 		const { stderr, exitCode } = await run(["plan", "review", seedNoPlan, "--by", "alice"], tmpDir);
 		expect(exitCode).not.toBe(0);
 		expect(stderr).toContain(`Seed ${seedNoPlan} has no plan`);
-		expect(stderr).toContain(`sd plan submit ${seedNoPlan}`);
+		expect(stderr).toContain(`luuna-missions plan submit ${seedNoPlan}`);
 	});
 
 	test("review: unknown id errors cleanly", async () => {
@@ -3527,7 +3527,7 @@ describe("sd plan {show,validate,outcome,review}: accept seed id (seeds-51bc)", 
 	});
 });
 
-describe("sd plan: name field (seeds-5640)", () => {
+describe("luuna-missions plan: name field (missions-5640)", () => {
 	async function submitWithArgs(
 		seedTitle: string,
 		extraArgs: string[] = [],
@@ -3546,7 +3546,7 @@ describe("sd plan: name field (seeds-5640)", () => {
 
 	async function readPlan(planId: string): Promise<{ id: string; name?: string }> {
 		const plans = await readJsonl<{ id: string; name?: string }>(
-			join(tmpDir, ".seeds/plans.jsonl"),
+			join(tmpDir, ".luuna/missions/plans.jsonl"),
 		);
 		const found = plans.find((p) => p.id === planId);
 		if (!found) throw new Error(`plan not found: ${planId}`);
@@ -3658,7 +3658,7 @@ describe("sd plan: name field (seeds-5640)", () => {
 	});
 });
 
-describe("sd plan edit (seeds-9b12 / pl-dee8 step 1): --name", () => {
+describe("luuna-missions plan edit (missions-9b12 / pl-dee8 step 1): --name", () => {
 	async function submit(
 		seedTitle = "Editable seed",
 	): Promise<{ seedId: string; planId: string; revision: number }> {
@@ -3681,7 +3681,7 @@ describe("sd plan edit (seeds-9b12 / pl-dee8 step 1): --name", () => {
 			name?: string;
 			revision: number;
 			updatedAt: string;
-		}>(join(tmpDir, ".seeds/plans.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 		const found = plans.find((p) => p.id === planId);
 		if (!found) throw new Error(`plan not found: ${planId}`);
 		return found;
@@ -3784,7 +3784,7 @@ describe("sd plan edit (seeds-9b12 / pl-dee8 step 1): --name", () => {
 	});
 });
 
-describe("sd plan edit (seeds-21f2 / pl-dee8 step 2): --section", () => {
+describe("luuna-missions plan edit (missions-21f2 / pl-dee8 step 2): --section", () => {
 	async function submit(): Promise<{ seedId: string; planId: string; revision: number }> {
 		const seedId = await createSeed(tmpDir, "Section editable seed");
 		const planPath = await writePlanFile(tmpDir, validPlanFor());
@@ -3810,7 +3810,7 @@ describe("sd plan edit (seeds-21f2 / pl-dee8 step 2): --section", () => {
 			updatedAt: string;
 			sections: Record<string, unknown>;
 			children: string[];
-		}>(join(tmpDir, ".seeds/plans.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 		const found = plans.find((p) => p.id === planId);
 		if (!found) throw new Error(`plan not found: ${planId}`);
 		return found;
@@ -3825,7 +3825,7 @@ describe("sd plan edit (seeds-21f2 / pl-dee8 step 2): --section", () => {
 			id: string;
 			description?: string;
 			updatedAt: string;
-		}>(join(tmpDir, ".seeds/issues.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 		// Last-write-wins (dedup-on-read): scan from the end to mirror live behavior.
 		for (let i = issues.length - 1; i >= 0; i--) {
 			const row = issues[i];
@@ -3840,7 +3840,7 @@ describe("sd plan edit (seeds-21f2 / pl-dee8 step 2): --section", () => {
 		const firstChild = before.children[0];
 		if (!firstChild) throw new Error("expected children");
 		const childBefore = await readIssueRow(firstChild);
-		const newContext = `${VALID_CONTEXT} Also: edited via sd plan edit.`;
+		const newContext = `${VALID_CONTEXT} Also: edited via luuna-missions plan edit.`;
 		const { stdout, exitCode } = await run(
 			["plan", "edit", planId, "--section", "context", newContext, "--json"],
 			tmpDir,
@@ -3890,7 +3890,7 @@ describe("sd plan edit (seeds-21f2 / pl-dee8 step 2): --section", () => {
 
 		for (const childId of children) {
 			const child = await readIssueRow(childId);
-			expect(child.description ?? "").toContain("seeds:plan-backref:start");
+			expect(child.description ?? "").toContain("missions:plan-backref:start");
 			expect(child.description ?? "").toContain("Edited approach");
 		}
 	});
@@ -3973,7 +3973,7 @@ describe("sd plan edit (seeds-21f2 / pl-dee8 step 2): --section", () => {
 
 	test("plan show surfaces the edited section text", async () => {
 		const { planId } = await submit();
-		const newApproach = "Refined approach surfaced by sd plan show after edit.";
+		const newApproach = "Refined approach surfaced by luuna-missions plan show after edit.";
 		await run(["plan", "edit", planId, "--section", "approach", newApproach], tmpDir);
 		const { stdout } = await run(["plan", "show", planId, "--json"], tmpDir);
 		const parsed = JSON.parse(stdout) as {
@@ -3983,7 +3983,7 @@ describe("sd plan edit (seeds-21f2 / pl-dee8 step 2): --section", () => {
 	});
 });
 
-describe("sd plan edit (seeds-64cf / pl-dee8 step 3): --step metadata", () => {
+describe("luuna-missions plan edit (missions-64cf / pl-dee8 step 3): --step metadata", () => {
 	async function submit(): Promise<{
 		seedId: string;
 		planId: string;
@@ -4023,7 +4023,7 @@ describe("sd plan edit (seeds-64cf / pl-dee8 step 3): --step metadata", () => {
 			updatedAt: string;
 			sections: { steps?: unknown[] } & Record<string, unknown>;
 			children: string[];
-		}>(join(tmpDir, ".seeds/plans.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/plans.jsonl"));
 		const found = plans.find((p) => p.id === planId);
 		if (!found) throw new Error(`plan not found: ${planId}`);
 		return found;
@@ -4042,7 +4042,7 @@ describe("sd plan edit (seeds-64cf / pl-dee8 step 3): --step metadata", () => {
 			type: string;
 			priority: number;
 			updatedAt: string;
-		}>(join(tmpDir, ".seeds/issues.jsonl"));
+		}>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 		for (let i = issues.length - 1; i >= 0; i--) {
 			const row = issues[i];
 			if (row && row.id === id) return row;
@@ -4284,7 +4284,7 @@ describe("sd plan edit (seeds-64cf / pl-dee8 step 3): --step metadata", () => {
 	});
 });
 
-describe("sd plan: step.labels (seeds-9f86 / pl-e5a8 step 4)", () => {
+describe("luuna-missions plan: step.labels (missions-9f86 / pl-e5a8 step 4)", () => {
 	type IssueRow = {
 		id: string;
 		title: string;
@@ -4296,7 +4296,7 @@ describe("sd plan: step.labels (seeds-9f86 / pl-e5a8 step 4)", () => {
 	};
 
 	async function readIssueRows(): Promise<IssueRow[]> {
-		return readJsonl<IssueRow>(join(tmpDir, ".seeds/issues.jsonl"));
+		return readJsonl<IssueRow>(join(tmpDir, ".luuna/missions/issues.jsonl"));
 	}
 
 	async function findIssue(id: string): Promise<IssueRow | undefined> {
@@ -4621,7 +4621,7 @@ describe("sd plan: step.labels (seeds-9f86 / pl-e5a8 step 4)", () => {
 		});
 	});
 
-	describe("runAdopt (post-submit `sd plan adopt`)", () => {
+	describe("runAdopt (post-submit `luuna-missions plan adopt`)", () => {
 		test("--step <i> pulls step.labels from the blueprint and merges additively", async () => {
 			const parent = await createSeed(tmpDir, "Parent");
 			const plan = validPlanFor();

@@ -9,8 +9,8 @@ import {
 
 describe("markers", () => {
 	test("START_MARKER and END_MARKER are correct", () => {
-		expect(START_MARKER).toBe("<!-- seeds:start -->");
-		expect(END_MARKER).toBe("<!-- seeds:end -->");
+		expect(START_MARKER).toBe("<!-- missions:start -->");
+		expect(END_MARKER).toBe("<!-- missions:end -->");
 	});
 
 	describe("hasMarkerSection", () => {

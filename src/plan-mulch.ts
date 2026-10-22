@@ -167,7 +167,7 @@ export function recordDecision(opts: RecordDecisionOptions): RecordDecisionResul
 				opts.title,
 				"--rationale",
 				opts.approach,
-				"--evidence-seeds",
+				"--evidence-missions",
 				opts.planId,
 				"--json",
 			],

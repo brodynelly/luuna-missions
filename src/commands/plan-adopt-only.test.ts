@@ -15,7 +15,7 @@ async function run(
 let tmpDir: string;
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-adopt-only-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-adopt-only-"));
 	await run(["init"], tmpDir);
 });
 
@@ -39,11 +39,11 @@ async function readJsonl<T>(path: string): Promise<T[]> {
 }
 
 async function readPlans(cwd: string): Promise<Plan[]> {
-	return readJsonl<Plan>(join(cwd, ".seeds", "plans.jsonl"));
+	return readJsonl<Plan>(join(cwd, ".luuna/missions", "plans.jsonl"));
 }
 
 async function readIssues(cwd: string): Promise<Issue[]> {
-	return readJsonl<Issue>(join(cwd, ".seeds", "issues.jsonl"));
+	return readJsonl<Issue>(join(cwd, ".luuna/missions", "issues.jsonl"));
 }
 
 async function createPlan(cwd: string, seedId: string, extra: string[] = []): Promise<string> {
@@ -53,7 +53,7 @@ async function createPlan(cwd: string, seedId: string, extra: string[] = []): Pr
 	return parsed.plan_id;
 }
 
-describe("sd plan create", () => {
+describe("luuna-missions plan create", () => {
 	test("creates an adopt-only plan with zero children", async () => {
 		const parent = await createSeed(tmpDir, "Release train");
 		const { stdout, exitCode } = await run(["plan", "create", parent, "--json"], tmpDir);
@@ -112,8 +112,8 @@ describe("sd plan create", () => {
 	});
 });
 
-describe("sd plan create → adopt → reorder (release train)", () => {
-	test("assembles existing seeds in a controlled order with no junk seeds", async () => {
+describe("luuna-missions plan create → adopt → reorder (release train)", () => {
+	test("assembles existing missions in a controlled order with no junk missions", async () => {
 		const parent = await createSeed(tmpDir, "Release v2");
 		const a = await createSeed(tmpDir, "Feature A");
 		const b = await createSeed(tmpDir, "Feature B");
@@ -134,14 +134,14 @@ describe("sd plan create → adopt → reorder (release train)", () => {
 		const issues = await readIssues(tmpDir);
 		const seed = issues.find((i) => i.id === parent);
 		expect((seed?.blockedBy ?? []).sort()).toEqual([a, b, release].sort());
-		// All three adopted seeds stay open (link-only).
+		// All three adopted missions stay open (link-only).
 		for (const id of [a, b, release]) {
 			expect(issues.find((i) => i.id === id)?.status).toBe("open");
 		}
 	});
 });
 
-describe("sd plan adopt --at/--before/--after", () => {
+describe("luuna-missions plan adopt --at/--before/--after", () => {
 	async function setup(): Promise<{ planId: string; c1: string; c2: string }> {
 		const parent = await createSeed(tmpDir, "Parent");
 		const c1 = await createSeed(tmpDir, "Child 1");
@@ -218,7 +218,7 @@ describe("sd plan adopt --at/--before/--after", () => {
 	});
 });
 
-describe("sd plan reorder", () => {
+describe("luuna-missions plan reorder", () => {
 	async function setup(): Promise<{ planId: string; c1: string; c2: string; c3: string }> {
 		const parent = await createSeed(tmpDir, "Parent");
 		const c1 = await createSeed(tmpDir, "C1");

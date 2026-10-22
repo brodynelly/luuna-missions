@@ -1,7 +1,7 @@
 // --timing hook helpers, extracted from src/index.ts for in-process testing.
 //
 // The CLI installs installTimingHook() on the top-level commander Program so
-// that `sd <cmd> --timing` prints "⏱ <elapsed>" to stderr after the action
+// that `luuna-missions <cmd> --timing` prints "⏱ <elapsed>" to stderr after the action
 // completes. stdout is left untouched so `--json --timing` keeps a clean JSON
 // payload on stdout and the timing line on stderr.
 

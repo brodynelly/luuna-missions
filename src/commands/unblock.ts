@@ -1,10 +1,10 @@
 import type { Command } from "commander";
-import { findSeedsDir } from "../config.ts";
+import { findMissionsDir } from "../config.ts";
 import { accent, muted, outputJson } from "../output.ts";
 import { issuesPath, readIssues, withLock, writeIssues } from "../store.ts";
 import type { Issue } from "../types.ts";
 
-export async function run(args: string[], seedsDir?: string): Promise<void> {
+export async function run(args: string[], missionsDir?: string): Promise<void> {
 	const jsonMode = args.includes("--json");
 	const allFlag = args.includes("--all");
 
@@ -18,15 +18,15 @@ export async function run(args: string[], seedsDir?: string): Promise<void> {
 	const positional = args.filter((a, i) => !a.startsWith("--") && !skipNext.has(i));
 
 	const issueId = positional[0];
-	if (!issueId) throw new Error("Usage: sd unblock <id> [--from <blocker-id> | --all]");
+	if (!issueId) throw new Error("Usage: luuna-missions unblock <id> [--from <blocker-id> | --all]");
 	if (!allFlag && fromIdx === -1) {
-		throw new Error("Usage: sd unblock <id> [--from <blocker-id> | --all]");
+		throw new Error("Usage: luuna-missions unblock <id> [--from <blocker-id> | --all]");
 	}
 	if (fromIdx !== -1 && !blockerId) {
 		throw new Error("--from requires a blocker ID");
 	}
 
-	const dir = seedsDir ?? (await findSeedsDir());
+	const dir = missionsDir ?? (await findMissionsDir());
 	let removed: string[] = [];
 
 	await withLock(issuesPath(dir), async () => {

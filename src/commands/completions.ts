@@ -59,8 +59,8 @@ export function generateBash(program: Command): string {
 			? `    case "\${COMP_WORDS[1]}" in\n${subcaseBranches.join("\n")}\n    esac`
 			: "";
 
-	return `# bash completion for sd
-_sd_completions() {
+	return `# bash completion for luuna-missions
+_luuna_missions_completions() {
     local cur prev
     cur="\${COMP_WORDS[COMP_CWORD]}"
     prev="\${COMP_WORDS[COMP_CWORD-1]}"
@@ -73,7 +73,7 @@ _sd_completions() {
 ${caseBlock}
 }
 
-complete -F _sd_completions sd
+complete -F _luuna_missions_completions luuna-missions lm
 `;
 }
 
@@ -110,9 +110,9 @@ export function generateZsh(program: Command): string {
 			? `    case "$words[1]" in\n${subcmdFunctions.join("\n")}\n    esac`
 			: "";
 
-	return `#compdef sd
+	return `#compdef luuna-missions lm
 
-_sd() {
+_luuna_missions() {
     local -a commands
     commands=(
 ${cmdDescLines.join("\n")}
@@ -129,16 +129,16 @@ ${subcmdCase}
     esac
 }
 
-_sd "$@"
+_luuna_missions "$@"
 `;
 }
 
 export function generateFish(program: Command): string {
 	const cmds = collectCommands(program);
-	const lines: string[] = ["# fish completions for sd"];
+	const lines: string[] = ["# fish completions for luuna-missions"];
 
-	// Disable file completions for sd
-	lines.push("complete -c sd -f");
+	// Disable file completions for luuna-missions
+	lines.push("complete -c luuna-missions -f");
 	lines.push("");
 
 	// Top-level commands
@@ -147,7 +147,7 @@ export function generateFish(program: Command): string {
 
 	for (const cmd of cmds) {
 		lines.push(
-			`complete -c sd -n "not ${noSubcmdCond}" -a ${cmd.name} -d '${cmd.description.replace(/'/g, "\\'")}'`,
+			`complete -c luuna-missions -n "not ${noSubcmdCond}" -a ${cmd.name} -d '${cmd.description.replace(/'/g, "\\'")}'`,
 		);
 	}
 
@@ -157,14 +157,14 @@ export function generateFish(program: Command): string {
 	for (const cmd of cmds) {
 		for (const sub of cmd.subcommands) {
 			lines.push(
-				`complete -c sd -n "__fish_seen_subcommand_from ${cmd.name}" -a ${sub.name} -d '${sub.description.replace(/'/g, "\\'")}'`,
+				`complete -c luuna-missions -n "__fish_seen_subcommand_from ${cmd.name}" -a ${sub.name} -d '${sub.description.replace(/'/g, "\\'")}'`,
 			);
 		}
 		for (const o of cmd.options) {
 			const flag = o.flags.replace(/^--?/, "");
 			const longFlag = o.flags.startsWith("--") ? `-l ${flag}` : `-s ${flag}`;
 			lines.push(
-				`complete -c sd -n "__fish_seen_subcommand_from ${cmd.name}" ${longFlag} -d '${o.description.replace(/'/g, "\\'")}'`,
+				`complete -c luuna-missions -n "__fish_seen_subcommand_from ${cmd.name}" ${longFlag} -d '${o.description.replace(/'/g, "\\'")}'`,
 			);
 		}
 	}

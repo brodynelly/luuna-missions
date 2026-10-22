@@ -1,20 +1,21 @@
-// sd setup claude [--remove]: wire seeds into Claude Code hooks in
+// luuna-missions setup claude [--remove]: wire missions into Claude Code hooks in
 // <project>/.claude/settings.json.
 //
-//   SessionStart  sd prime --compact   (quick reference + live issue state)
-//   PreToolUse    sd guard             (Write|Edit|MultiEdit|NotebookEdit)
+//   SessionStart  luuna-missions prime --compact   (quick reference + live issue state)
+//   PreToolUse    luuna-missions guard             (Write|Edit|MultiEdit|NotebookEdit)
 //
 // Claude Code nests handlers in matcher groups:
 //   {"hooks": {"<Event>": [{"matcher": "...", "hooks": [{"type": "command", "command": "..."}]}]}}
-// Seeds owns exactly the handlers whose command is `sd prime|guard`; install
+// Missions owns exactly the handlers whose command is `luuna-missions prime|guard`; install
 // strips those and appends one fresh group per event, leaving everything else
-// as it was. Re-running is a no-op. --remove strips seeds handlers and drops
+// as it was. Re-running is a no-op. --remove strips missions handlers and drops
 // groups and events they leave empty. Mirrors roots/mulch `setup claude`.
 
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { Command } from "commander";
-import { findSeedsDir, projectRootFromSeedsDir } from "../config.ts";
+import { findMissionsDir, projectRootFromMissionsDir } from "../config.ts";
+import { LEGACY_HOOK_COMMAND_RE } from "../legacy-layout.ts";
 import { outputJson, printSuccess } from "../output.ts";
 
 type Json = Record<string, unknown>;
@@ -26,18 +27,26 @@ interface HookSpec {
 }
 
 const HOOKS: readonly HookSpec[] = [
-	{ event: "SessionStart", command: "sd prime --compact" },
-	{ event: "PreToolUse", matcher: "Write|Edit|MultiEdit|NotebookEdit", command: "sd guard" },
+	{ event: "SessionStart", command: "luuna-missions prime --compact" },
+	{
+		event: "PreToolUse",
+		matcher: "Write|Edit|MultiEdit|NotebookEdit",
+		command: "luuna-missions guard",
+	},
 ];
 
-const SD_COMMAND_RE = /^\s*sd\s+(prime|guard)(\s|$)/;
+const MISSIONS_COMMAND_RE = /^\s*(?:luuna-missions|lm)\s+(prime|guard)(\s|$)/;
 
 function isObject(v: unknown): v is Json {
 	return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function isSeedsHandler(h: unknown): boolean {
-	return isObject(h) && typeof h.command === "string" && SD_COMMAND_RE.test(h.command);
+function isMissionsHandler(h: unknown): boolean {
+	return (
+		isObject(h) &&
+		typeof h.command === "string" &&
+		(MISSIONS_COMMAND_RE.test(h.command) || LEGACY_HOOK_COMMAND_RE.test(h.command))
+	);
 }
 
 function groupHooks(g: unknown): unknown[] {
@@ -49,20 +58,20 @@ function makeGroup(spec: HookSpec): Json {
 	return spec.matcher === undefined ? { hooks } : { matcher: spec.matcher, hooks };
 }
 
-function stripSeeds(groups: readonly unknown[]): unknown[] {
+function stripMissions(groups: readonly unknown[]): unknown[] {
 	const out: unknown[] = [];
 	for (const g of groups) {
 		const hooks = groupHooks(g);
-		const kept = hooks.filter((h) => !isSeedsHandler(h));
+		const kept = hooks.filter((h) => !isMissionsHandler(h));
 		if (kept.length === hooks.length) out.push(g);
 		else if (kept.length > 0) out.push({ ...(g as Json), hooks: kept });
 	}
 	return out;
 }
 
-/** The event holds exactly one seeds handler, in a group shaped as we write it. */
+/** The event holds exactly one missions handler, in a group shaped as we write it. */
 function isInstalled(groups: readonly unknown[], spec: HookSpec): boolean {
-	const ours = groups.filter((g) => groupHooks(g).some(isSeedsHandler));
+	const ours = groups.filter((g) => groupHooks(g).some(isMissionsHandler));
 	if (ours.length !== 1) return false;
 	return JSON.stringify(ours[0]) === JSON.stringify(makeGroup(spec));
 }
@@ -74,12 +83,12 @@ function syncEvent(current: unknown, spec: HookSpec, remove: boolean): unknown[]
 	}
 	const groups: unknown[] = current ?? [];
 	if (!remove && isInstalled(groups, spec)) return null;
-	const updated = remove ? stripSeeds(groups) : [...stripSeeds(groups), makeGroup(spec)];
+	const updated = remove ? stripMissions(groups) : [...stripMissions(groups), makeGroup(spec)];
 	return JSON.stringify(updated) === JSON.stringify(groups) ? null : updated;
 }
 
-/** Install (or with remove, strip) the seeds hooks. Does not mutate `settings`. */
-export function syncSeedsHooks(
+/** Install (or with remove, strip) the missions hooks. Does not mutate `settings`. */
+export function syncMissionsHooks(
 	settings: Json,
 	remove: boolean,
 ): { settings: Json; changed: boolean } {
@@ -125,9 +134,9 @@ export async function run(args: string[]): Promise<void> {
 		throw new Error(`Unknown setup target "${target ?? ""}"; supported: claude`);
 	}
 
-	const root = projectRootFromSeedsDir(await findSeedsDir());
+	const root = projectRootFromMissionsDir(await findMissionsDir());
 	const file = join(root, ".claude", "settings.json");
-	const result = syncSeedsHooks(await readSettings(file), remove);
+	const result = syncMissionsHooks(await readSettings(file), remove);
 	if (result.changed) {
 		mkdirSync(dirname(file), { recursive: true });
 		await Bun.write(file, `${JSON.stringify(result.settings, null, 2)}\n`);
@@ -146,7 +155,9 @@ export async function run(args: string[]): Promise<void> {
 	} else if (!result.changed) {
 		printSuccess(`${file}: already up to date`);
 	} else {
-		printSuccess(`${remove ? "Removed seeds hooks from" : "Installed seeds hooks in"} ${file}`);
+		printSuccess(
+			`${remove ? "Removed missions hooks from" : "Installed missions hooks in"} ${file}`,
+		);
 	}
 }
 
@@ -154,8 +165,10 @@ export function register(program: Command): void {
 	program
 		.command("setup")
 		.argument("<target>", "Harness to wire up (claude)")
-		.description("Install Claude Code hooks: prime on session start, guard .seeds/*.jsonl edits")
-		.option("--remove", "Remove seeds hooks")
+		.description(
+			"Install Claude Code hooks: prime on session start, guard .luuna/missions/*.jsonl edits",
+		)
+		.option("--remove", "Remove missions hooks")
 		.option("--json", "Output as JSON")
 		.action(async (target: string, opts: { remove?: boolean; json?: boolean }) => {
 			const args: string[] = [target];

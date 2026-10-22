@@ -14,18 +14,18 @@ function git(args: string[], cwd: string): void {
 	}
 }
 
-function initSeedsDir(root: string): void {
-	const seedsDir = join(root, ".seeds");
-	mkdirSync(seedsDir, { recursive: true });
-	writeFileSync(join(seedsDir, "config.yaml"), 'project: "test"\nversion: "1"\n');
-	writeFileSync(join(seedsDir, "issues.jsonl"), "");
-	writeFileSync(join(seedsDir, ".gitignore"), "*.lock\n");
+function initMissionsDir(root: string): void {
+	const missionsDir = join(root, ".luuna/missions");
+	mkdirSync(missionsDir, { recursive: true });
+	writeFileSync(join(missionsDir, "config.yaml"), 'project: "test"\nversion: "1"\n');
+	writeFileSync(join(missionsDir, "issues.jsonl"), "");
+	writeFileSync(join(missionsDir, ".gitignore"), "*.lock\n");
 }
 
 let tmpDir: string;
 
 beforeEach(async () => {
-	tmpDir = realpathSync(await mkdtemp(join(tmpdir(), "seeds-sync-test-")));
+	tmpDir = realpathSync(await mkdtemp(join(tmpdir(), "missions-sync-test-")));
 });
 
 afterEach(async () => {
@@ -39,7 +39,7 @@ describe("sync — worktree guard", () => {
 		git(["init"], mainRepo);
 		git(["config", "user.email", "test@test.com"], mainRepo);
 		git(["config", "user.name", "Test"], mainRepo);
-		initSeedsDir(mainRepo);
+		initMissionsDir(mainRepo);
 		git(["add", "."], mainRepo);
 		git(["commit", "-m", "init"], mainRepo);
 
@@ -73,13 +73,13 @@ describe("sync — worktree guard", () => {
 		expect(logs.some((l) => l.includes("worktree"))).toBe(false);
 	});
 
-	test("sd sync --json returns worktree: true inside a worktree", async () => {
+	test("luuna-missions sync --json returns worktree: true inside a worktree", async () => {
 		const mainRepo = join(tmpDir, "main");
 		mkdirSync(mainRepo);
 		git(["init"], mainRepo);
 		git(["config", "user.email", "test@test.com"], mainRepo);
 		git(["config", "user.name", "Test"], mainRepo);
-		initSeedsDir(mainRepo);
+		initMissionsDir(mainRepo);
 		git(["add", "."], mainRepo);
 		git(["commit", "-m", "init"], mainRepo);
 
@@ -87,8 +87,8 @@ describe("sync — worktree guard", () => {
 		git(["worktree", "add", wtDir, "-b", "wt-branch"], mainRepo);
 
 		// Worktree-guard branch only fires when sync is invoked as the top-
-		// level CLI (no explicit seedsDir arg). The in-process harness passes
-		// a resolved seedsDir which bypasses the guard, so this test stays
+		// level CLI (no explicit missionsDir arg). The in-process harness passes
+		// a resolved missionsDir which bypasses the guard, so this test stays
 		// subprocess-based to exercise the real CLI codepath.
 		const result = Bun.spawnSync(
 			["bun", "run", join(import.meta.dir, "..", "index.ts"), "sync", "--json"],
@@ -105,18 +105,18 @@ describe("sync — worktree guard", () => {
 		expect(output.success).toBe(true);
 	});
 
-	test("sd sync commits normally from main repo", async () => {
+	test("luuna-missions sync commits normally from main repo", async () => {
 		const mainRepo = join(tmpDir, "main");
 		mkdirSync(mainRepo);
 		git(["init"], mainRepo);
 		git(["config", "user.email", "test@test.com"], mainRepo);
 		git(["config", "user.name", "Test"], mainRepo);
-		initSeedsDir(mainRepo);
+		initMissionsDir(mainRepo);
 		git(["add", "."], mainRepo);
 		git(["commit", "-m", "init"], mainRepo);
 
 		// Create a new issue to have uncommitted changes
-		const issuesPath = join(mainRepo, ".seeds", "issues.jsonl");
+		const issuesPath = join(mainRepo, ".luuna/missions", "issues.jsonl");
 		writeFileSync(
 			issuesPath,
 			'{"id":"test-0001","title":"Test","status":"open","type":"task","priority":2,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}\n',
@@ -148,7 +148,7 @@ describe("sync — printSuccess + outputJson routing", () => {
 		git(["init"], mainRepo);
 		git(["config", "user.email", "test@test.com"], mainRepo);
 		git(["config", "user.name", "Test"], mainRepo);
-		initSeedsDir(mainRepo);
+		initMissionsDir(mainRepo);
 		git(["add", "."], mainRepo);
 		git(["commit", "-m", "init"], mainRepo);
 		return mainRepo;
@@ -182,13 +182,13 @@ describe("sync — printSuccess + outputJson routing", () => {
 	test("success commit emits brand ✓ line on stdout", async () => {
 		const repo = initRepo();
 		writeFileSync(
-			join(repo, ".seeds", "issues.jsonl"),
+			join(repo, ".luuna/missions", "issues.jsonl"),
 			'{"id":"t-0001","title":"T","status":"open","type":"task","priority":2,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}\n',
 		);
 
 		const cap = capture();
 		try {
-			await run([], join(repo, ".seeds"));
+			await run([], join(repo, ".luuna/missions"));
 		} finally {
 			cap.restore();
 		}
@@ -201,7 +201,7 @@ describe("sync — printSuccess + outputJson routing", () => {
 		const repo = initRepo();
 		const cap = capture();
 		try {
-			await run([], join(repo, ".seeds"));
+			await run([], join(repo, ".luuna/missions"));
 		} finally {
 			cap.restore();
 		}
@@ -213,7 +213,7 @@ describe("sync — printSuccess + outputJson routing", () => {
 	test("--json success emits canonical {success,command,...} payload", async () => {
 		const repo = initRepo();
 		writeFileSync(
-			join(repo, ".seeds", "issues.jsonl"),
+			join(repo, ".luuna/missions", "issues.jsonl"),
 			'{"id":"t-0002","title":"T","status":"open","type":"task","priority":2,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}\n',
 		);
 
@@ -224,7 +224,7 @@ describe("sync — printSuccess + outputJson routing", () => {
 			return true;
 		}) as typeof process.stdout.write;
 		try {
-			await run(["--json"], join(repo, ".seeds"));
+			await run(["--json"], join(repo, ".luuna/missions"));
 		} finally {
 			process.stdout.write = origWrite;
 		}
@@ -245,7 +245,7 @@ describe("sync — printSuccess + outputJson routing", () => {
 			return true;
 		}) as typeof process.stdout.write;
 		try {
-			await run(["--json"], join(repo, ".seeds"));
+			await run(["--json"], join(repo, ".luuna/missions"));
 		} finally {
 			process.stdout.write = origWrite;
 		}
@@ -271,15 +271,15 @@ describe("sync — printSuccess + outputJson routing", () => {
 		const repo = join(tmpDir, name);
 		mkdirSync(repo);
 		git(["init"], repo);
-		initSeedsDir(repo);
-		const hooksDir = join(repo, ".git", "seeds-hooks");
+		initMissionsDir(repo);
+		const hooksDir = join(repo, ".git", "missions-hooks");
 		mkdirSync(hooksDir, { recursive: true });
 		const hook = join(hooksDir, "pre-commit");
 		writeFileSync(hook, "#!/bin/sh\nexit 1\n");
 		chmodSync(hook, 0o755);
 		git(["config", "core.hooksPath", hooksDir], repo);
 		writeFileSync(
-			join(repo, ".seeds", "issues.jsonl"),
+			join(repo, ".luuna/missions", "issues.jsonl"),
 			'{"id":"t-0003","title":"T","status":"open","type":"task","priority":2,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}\n',
 		);
 		return repo;
@@ -287,10 +287,10 @@ describe("sync — printSuccess + outputJson routing", () => {
 
 	test("git-failure throws so the top-level handler emits the canonical error payload", async () => {
 		const repo = initBrokenRepo("brokenrepo");
-		await expect(run([], join(repo, ".seeds"))).rejects.toThrow(/git commit failed/);
+		await expect(run([], join(repo, ".luuna/missions"))).rejects.toThrow(/git commit failed/);
 	});
 
-	test("sd sync --json git-failure (subprocess) emits {success:false,command:'sync',error}", async () => {
+	test("luuna-missions sync --json git-failure (subprocess) emits {success:false,command:'sync',error}", async () => {
 		const repo = initBrokenRepo("brokenrepo2");
 
 		const result = Bun.spawnSync(

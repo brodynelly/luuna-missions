@@ -22,7 +22,7 @@ async function writeBeads(cwd: string, lines: string[]): Promise<void> {
 }
 
 beforeEach(async () => {
-	tmpDir = await mkdtemp(join(tmpdir(), "seeds-migrate-test-"));
+	tmpDir = await mkdtemp(join(tmpdir(), "missions-migrate-test-"));
 	await run(["init"], tmpDir);
 });
 
@@ -30,8 +30,8 @@ afterEach(async () => {
 	await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("sd migrate-from-beads", () => {
-	test("happy path: maps beads issues into the seeds store and counts skips", async () => {
+describe("luuna-missions migrate-from-beads", () => {
+	test("happy path: maps beads issues into the missions store and counts skips", async () => {
 		await writeBeads(tmpDir, [
 			JSON.stringify({
 				id: "bd-1",

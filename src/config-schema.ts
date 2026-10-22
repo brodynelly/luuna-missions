@@ -1,6 +1,6 @@
-// JSON Schema for `.seeds/config.yaml`. Wire-format contract for warren V2's
+// JSON Schema for `.luuna/missions/config.yaml`. Wire-format contract for warren V2's
 // schema-driven config UI (warren ROADMAP R-10): warren reads this schema,
-// renders a form, and writes back via `sd config set <path> <value>`. Locked
+// renders a form, and writes back via `luuna-missions config set <path> <value>`. Locked
 // with a golden test (config.test.ts) so any shape change is intentional.
 //
 // Mirrors the ground-truth shape produced by readConfig + loadPlanTemplates in
@@ -25,10 +25,10 @@ function templateExample(t: PlanTemplate): Record<string, unknown> {
 export function configSchema(): JSONSchema {
 	return {
 		$schema: "https://json-schema.org/draft/2020-12/schema",
-		$id: "https://github.com/jayminwest/seeds/config.schema.json",
-		title: "Seeds project config",
+		$id: "https://github.com/brodynelly/luuna-missions/config.schema.json",
+		title: "Missions project config",
 		description:
-			"Schema for .seeds/config.yaml. Consumed by warren's schema-driven UI; emit via `sd config schema`.",
+			"Schema for .luuna/missions/config.yaml. Consumed by warren's schema-driven UI; emit via `luuna-missions config schema`.",
 		type: "object",
 		required: ["project", "version"],
 		additionalProperties: false,
@@ -50,7 +50,7 @@ export function configSchema(): JSONSchema {
 				minimum: 1,
 				title: "Max plan depth",
 				description:
-					"Display-only depth limit for `sd plan show` recursion through nested sub-plans.",
+					"Display-only depth limit for `luuna-missions plan show` recursion through nested sub-plans.",
 				default: DEFAULT_MAX_PLAN_DEPTH,
 			},
 			plan_templates: {
@@ -77,7 +77,7 @@ export function configSchema(): JSONSchema {
 					description: {
 						type: "string",
 						title: "Description",
-						description: "Human-readable summary shown in `sd plan templates`.",
+						description: "Human-readable summary shown in `luuna-missions plan templates`.",
 					},
 					sections: {
 						type: "object",
