@@ -23,7 +23,7 @@ function initMissionsDir(root: string): void {
 let tmpDir: string;
 
 beforeEach(async () => {
-	tmpDir = realpathSync(await mkdtemp(join(tmpdir(), "missions-config-test-")));
+	tmpDir = realpathSync.native(await mkdtemp(join(tmpdir(), "missions-config-test-")));
 });
 
 afterEach(async () => {

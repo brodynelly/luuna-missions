@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { enrichPriorArt, type PriorArtEntry, typesForSection } from "./plan-atlas.ts";
+import { pathWith, writeFakeBin } from "./test-fake-bin.ts";
 
 let tmpDir: string;
 let binDir: string;
@@ -13,7 +14,7 @@ beforeEach(async () => {
 	binDir = join(tmpDir, "bin");
 	await mkdir(binDir, { recursive: true });
 	originalPath = process.env.PATH;
-	process.env.PATH = `${binDir}:${process.env.PATH ?? ""}`;
+	process.env.PATH = pathWith(binDir);
 });
 
 afterEach(async () => {
@@ -31,9 +32,8 @@ async function writeFakeMl(opts: {
 	const data = JSON.stringify(opts.responses);
 	const responsesFile = join(binDir, "responses.json");
 	await writeFile(responsesFile, data);
-	const body = `#!/usr/bin/env bun
-const fs = require("node:fs");
-const responses = JSON.parse(fs.readFileSync("${responsesFile}", "utf8"));
+	const body = `const fs = require("node:fs");
+const responses = JSON.parse(fs.readFileSync(${JSON.stringify(responsesFile)}, "utf8"));
 const args = process.argv.slice(2);
 // Expected: [--json, query, <domain>, --type, <type>]
 const typeIdx = args.indexOf("--type");
@@ -51,9 +51,7 @@ if (r.exit && r.exit !== 0) {
 }
 process.stdout.write(JSON.stringify(r.json ?? {}));
 `;
-	const scriptPath = join(binDir, "luuna-atlas");
-	await writeFile(scriptPath, body);
-	await chmod(scriptPath, 0o755);
+	await writeFakeBin(binDir, "luuna-atlas", body);
 }
 
 function makeRecord(

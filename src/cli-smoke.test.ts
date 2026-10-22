@@ -73,7 +73,7 @@ describe("luuna-missions CLI smoke", () => {
 		expect(parsed.name).toBe("@luuna/missions-cli");
 		expect(parsed.version).toBe(VERSION);
 		expect(parsed.runtime).toBe("bun");
-		expect(parsed.platform).toMatch(/^[a-z]+-[a-z0-9]+$/);
+		expect(parsed.platform).toBe(`${process.platform}-${process.arch}`);
 	});
 
 	test("--help renders root usage with commands and options", async () => {

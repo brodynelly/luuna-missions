@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { inferDomain } from "./plan-domain.ts";
+import { pathWith, writeFakeBin } from "./test-fake-bin.ts";
 import type { Issue } from "./types.ts";
 
-// Each test gets a fresh tmpdir + bin/ on PATH containing a fake `luuna-atlas` script
-// whose behavior is controlled per-test. This isolates the helper from any
-// real luuna-atlas install on the developer's machine.
+// Each test gets a fresh tmpdir + bin/ on PATH containing a fake `luuna-atlas`
+// executable whose behavior is controlled per-test. This isolates the helper
+// from any real luuna-atlas install on the developer's machine.
 
 let tmpDir: string;
 let binDir: string;
@@ -18,7 +19,7 @@ beforeEach(async () => {
 	binDir = join(tmpDir, "bin");
 	await mkdir(binDir, { recursive: true });
 	originalPath = process.env.PATH;
-	process.env.PATH = `${binDir}:${process.env.PATH ?? ""}`;
+	process.env.PATH = pathWith(binDir);
 });
 
 afterEach(async () => {
@@ -31,22 +32,15 @@ async function writeFakeMl(opts: { statusJson?: unknown; statusExit?: number }):
 	const json = opts.statusJson === undefined ? "" : JSON.stringify(opts.statusJson);
 	const exit = opts.statusExit ?? 0;
 	// The fake handles `--json status` (the only call inferDomain makes).
-	const body = `#!/usr/bin/env bash
-set -euo pipefail
-case "$*" in
-  "--json status")
-    cat <<'EOF'
-${json}
-EOF
-    exit ${exit}
-    ;;
-esac
-echo "fake luuna-atlas: unsupported args: $*" >&2
-exit 99
+	const body = `const args = process.argv.slice(2).join(" ");
+if (args === "--json status") {
+	process.stdout.write(${JSON.stringify(`${json}\n`)});
+	process.exit(${exit});
+}
+process.stderr.write("fake luuna-atlas: unsupported args: " + args + "\\n");
+process.exit(99);
 `;
-	const scriptPath = join(binDir, "luuna-atlas");
-	await writeFile(scriptPath, body);
-	await chmod(scriptPath, 0o755);
+	await writeFakeBin(binDir, "luuna-atlas", body);
 }
 
 function makeSeed(overrides: Partial<Issue> = {}): Issue {

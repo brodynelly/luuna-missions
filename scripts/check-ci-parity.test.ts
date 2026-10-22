@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import {
 	type CiInvocation,
 	computeReachable,
@@ -85,7 +85,7 @@ describe("check-ci-parity", () => {
 			writeFileSync(join(dir, "ci.yml"), "jobs: {}");
 			writeFileSync(join(dir, "ci-postgres.yml"), "jobs: {}");
 			writeFileSync(join(dir, "release.yml"), "jobs: {}");
-			const found = listCiWorkflows(dir).map((p) => p.split("/").pop());
+			const found = listCiWorkflows(dir).map((p) => basename(p));
 			expect(found).toEqual(["ci-postgres.yml", "ci.yml"]);
 		} finally {
 			rmSync(dir, { recursive: true, force: true });

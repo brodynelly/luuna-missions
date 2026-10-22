@@ -7,6 +7,7 @@ import { enrichPriorArt, recordDecision } from "../plan-atlas.ts";
 import { applyPlanBackref, buildPlanBackref, stripPlanBackref } from "../plan-backref.ts";
 import { inferDomain } from "../plan-domain.ts";
 import { compilePlanTemplate, defaultTemplateForType } from "../plan-schema.ts";
+import { readStdin } from "../stdin.ts";
 import {
 	appendPlan,
 	issuesPath,
@@ -519,7 +520,7 @@ function validatePlanTemplateRefs(
 
 async function readPlanInput(planFile: string): Promise<string> {
 	if (planFile === "-") {
-		return await Bun.stdin.text();
+		return await readStdin();
 	}
 	const file = Bun.file(planFile);
 	if (!(await file.exists())) {
