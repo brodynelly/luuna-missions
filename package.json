@@ -52,7 +52,7 @@
     "check:dups": "bunx jscpd",
     "check:deps": "knip --dependencies",
     "check:coverage": "bun run scripts/check-coverage.ts --budget scripts/coverage-budgets.json",
-    "check:agents": "bun run scripts/validate-agents-md.ts --known-missing docs/check-all-standard.md --known-missing templates/l5-toolkit/scripts",
+    "check:agents": "bun run scripts/validate-agents-md.ts --known-missing docs/check-all-standard.md --known-missing templates/l5-toolkit/scripts --known-missing dist",
     "check:ci-parity": "bun scripts/check-ci-parity.ts",
     "check:all": "bun scripts/check-all.ts",
     "verify": "bun run typecheck && bun run check:agents && bun test --timeout 30000 && bun scripts/verify-native.ts",

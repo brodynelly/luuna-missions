@@ -42,4 +42,6 @@ yarn-error.log*
 
 # ---- agent-local scratch (per-repo conventions add here too) -------
 .factory-mission-scratch/
+.tac/runs/
+.tac/tools/
 .claude/settings.local.json

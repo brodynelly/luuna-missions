@@ -1,0 +1,70 @@
+name: Native release artifacts
+# Builds, verifies and uploads native archives as workflow artifacts only.
+# Manual dispatch only: there is no tag trigger and nothing is published.
+# GitHub Releases, signing/notarization and attestations are owner gates
+# (see docs/RELEASING.md).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Archive version (semver, e.g. 0.6.0 or 0.6.0-rc.1)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: native-release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  package:
+    name: package (${{ matrix.os }}/${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14
+            os: darwin
+            arch: arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+          - runner: ubuntu-latest
+            os: linux
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    env:
+      VERSION: ${{ inputs.version }}
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Go tests
+        run: go test ./...
+      - name: Release script tests
+        run: sh scripts/release/test-release-scripts.sh
+      - name: Package (host-native)
+        run: |
+          out="$RUNNER_TEMP/dist"
+          sh scripts/release/package.sh --version "$VERSION" --out "$out" --os "${{ matrix.os }}" --arch "${{ matrix.arch }}"
+          echo "DIST=$out" >> "$GITHUB_ENV"
+      - name: Verify archive (runs --help/--version on the host)
+        run: sh scripts/release/check-archive.sh --require-run "$DIST/luuna-missions_${VERSION}_${{ matrix.os }}_${{ matrix.arch }}.tar.gz"
+      # Owner gate: attestations need `id-token: write` and `attestations: write`
+      # and create a stored attestation. Disabled until the owner enables it.
+      # - uses: actions/attest-build-provenance@v2
+      #   with:
+      #     subject-path: ${{ env.DIST }}/*.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: luuna-missions_${{ inputs.version }}_${{ matrix.os }}_${{ matrix.arch }}
+          path: ${{ env.DIST }}/
+          if-no-files-found: error
+          retention-days: 14
